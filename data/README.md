@@ -22,8 +22,11 @@ policy compliance) is computed from these labels.
 | --- | --- |
 | [`dataset_schema.json`](dataset_schema.json) | JSON Schema (Draft 2020-12) that every dataset example must conform to. |
 | [`attack_taxonomy.md`](attack_taxonomy.md) | Controlled vocabularies: attack categories, risk levels, expected decisions, and labeling guidance. |
-| [`sample_examples.json`](sample_examples.json) | Representative examples used to validate the schema and demonstrate each label. |
+| [`sample_examples.json`](sample_examples.json) | Small set of representative examples used to demonstrate the schema and each label. |
+| [`dataset_v0.json`](dataset_v0.json) | The v0 dataset: 50 labeled examples (25 benign + 25 malicious). See [Dataset v0](#dataset-v0-m2-s2). |
 | [`validate_dataset.py`](validate_dataset.py) | Validates a dataset file against the schema. |
+| [`test_validate_dataset.py`](test_validate_dataset.py) | Positive/negative tests for the schema and validator. |
+| [`test_dataset_v0.py`](test_dataset_v0.py) | Balance and label-consistency tests for `dataset_v0.json`. |
 
 ---
 
@@ -87,6 +90,37 @@ levels and tools:
 
 ---
 
+## Dataset v0 (M2-S2)
+
+[`dataset_v0.json`](dataset_v0.json) is the first real dataset: **50 examples,
+25 benign and 25 malicious**, balanced across all eight tools and all four risk
+levels, and covering every decision and attack category. All content is
+synthetic (see [PII and safety](#pii-and-safety)).
+
+**Label distribution**
+
+| Axis | Counts |
+| --- | --- |
+| Benign / malicious | 25 benign · 25 malicious |
+| `attack_category` | none 25 · prompt_injection 8 · data_exfiltration 8 · unauthorized_action 9 |
+| `expected_decision` | ALLOW 20 · ASK_APPROVAL 7 · BLOCK 23 |
+| `risk_level` | low 8 · medium 12 · high 12 · critical 18 |
+
+**Design notes**
+
+- **Benign (25):** mostly `ALLOW`; five `ASK_APPROVAL` cases are legitimate but
+  risky/irreversible actions (deletes, external sends, shared-file overwrites)
+  that a human should confirm.
+- **Malicious (25):** split across the three attack categories. `prompt_injection`
+  examples hide the overriding instruction inside `external_context`;
+  `data_exfiltration` and `unauthorized_action` examples carry the risk in the
+  proposed tool call itself. Most are `BLOCK`; two ambiguous `unauthorized_action`
+  cases are `ASK_APPROVAL`.
+- **Coverage:** every one of the eight tools appears, no single tool exceeds ~26%
+  of the dataset, and all decisions, risk levels, and categories are present.
+
+---
+
 ## Validating the dataset
 
 The validator checks every example against the schema and exits non-zero if any
@@ -99,6 +133,9 @@ pip install jsonschema
 # Validate the sample examples (default)
 python data/validate_dataset.py
 
+# Validate the v0 dataset
+python data/validate_dataset.py data/dataset_v0.json
+
 # Validate any other dataset file
 python data/validate_dataset.py path/to/examples.json
 ```
@@ -108,7 +145,20 @@ Expected output for a clean file:
 ```
 [ok]   example 0
 ...
-6/6 examples valid.
+50/50 examples valid.
+```
+
+## Running the tests
+
+```bash
+pip install pytest        # optional; the tests also run under plain python
+
+# Run everything
+pytest data/
+
+# Or run a single suite without pytest
+python data/test_validate_dataset.py
+python data/test_dataset_v0.py
 ```
 
 ---
