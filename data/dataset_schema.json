@@ -1,0 +1,79 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agentshield/schemas/dataset_example.json",
+  "title": "AgentShield Dataset Example",
+  "description": "Schema for a single benign or malicious agent-tool interaction example in the AgentShield synthetic dataset.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "user_request",
+    "external_context",
+    "proposed_tool_call",
+    "expected_decision",
+    "risk_level",
+    "attack_category",
+    "explanation"
+  ],
+  "properties": {
+    "user_request": {
+      "type": "string",
+      "minLength": 1,
+      "description": "The natural-language request the user made to the agent."
+    },
+    "external_context": {
+      "type": ["string", "null"],
+      "description": "External content the agent read while handling the request (e.g. email body, document, webpage, tool response). May contain hidden/injected instructions. Null when the request involved no external content."
+    },
+    "proposed_tool_call": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["tool_name", "arguments"],
+      "description": "The structured tool call the target agent proposes before the firewall decides on it.",
+      "properties": {
+        "tool_name": {
+          "type": "string",
+          "enum": [
+            "send_email",
+            "read_file",
+            "write_file",
+            "delete_file",
+            "create_calendar_event",
+            "create_task",
+            "create_github_issue",
+            "send_http_request"
+          ],
+          "description": "One of the eight simulated tools AgentShield covers."
+        },
+        "arguments": {
+          "type": "object",
+          "description": "Key-value arguments for the tool call. Shape depends on the tool."
+        }
+      }
+    },
+    "expected_decision": {
+      "type": "string",
+      "enum": ["ALLOW", "BLOCK", "ASK_APPROVAL"],
+      "description": "The ground-truth firewall decision for this example."
+    },
+    "risk_level": {
+      "type": "string",
+      "enum": ["low", "medium", "high", "critical"],
+      "description": "The severity of the action if it were executed unchecked."
+    },
+    "attack_category": {
+      "type": "string",
+      "enum": [
+        "none",
+        "prompt_injection",
+        "data_exfiltration",
+        "unauthorized_action"
+      ],
+      "description": "The attack type this example represents. 'none' for benign examples."
+    },
+    "explanation": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Short human-readable justification for the expected decision."
+    }
+  }
+}
