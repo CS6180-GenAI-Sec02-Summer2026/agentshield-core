@@ -121,6 +121,28 @@ synthetic (see [PII and safety](#pii-and-safety)).
 
 ---
 
+## Red-team examples (M3-S2)
+
+[`red_team_examples.json`](red_team_examples.json) is a set of **20 adversarial
+examples** produced by the Red-Team Agent (see
+[`../agents/`](../agents/README.md)). It is kept separate from `dataset_v0.json`
+so the verified M2 dataset stays stable; regenerate it with
+`python agents/generate_red_team.py`.
+
+| Axis | Counts |
+| --- | --- |
+| `attack_category` | prompt_injection 8 · data_exfiltration 6 · unauthorized_action 6 |
+| `expected_decision` | BLOCK 18 · ASK_APPROVAL 2 |
+| `risk_level` | high 8 · critical 12 |
+| Tools targeted | send_email · read/write/delete_file · send_http_request |
+
+All examples are malicious and synthetic. Prompt-injection examples hide the
+overriding instruction inside `external_context` using a variety of injection
+patterns; exfiltration and unauthorized-action examples carry the risk in the
+proposed tool call itself.
+
+---
+
 ## Validating the dataset
 
 The validator checks every example against the schema and exits non-zero if any
@@ -135,6 +157,9 @@ python data/validate_dataset.py
 
 # Validate the v0 dataset
 python data/validate_dataset.py data/dataset_v0.json
+
+# Validate the red-team examples
+python data/validate_dataset.py data/red_team_examples.json
 
 # Validate any other dataset file
 python data/validate_dataset.py path/to/examples.json
