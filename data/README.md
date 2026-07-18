@@ -24,9 +24,17 @@ policy compliance) is computed from these labels.
 | [`attack_taxonomy.md`](attack_taxonomy.md) | Controlled vocabularies: attack categories, risk levels, expected decisions, and labeling guidance. |
 | [`sample_examples.json`](sample_examples.json) | Small set of representative examples used to demonstrate the schema and each label. |
 | [`dataset_v0.json`](dataset_v0.json) | The v0 dataset: 50 labeled examples (25 benign + 25 malicious). See [Dataset v0](#dataset-v0-m2-s2). |
-| [`validate_dataset.py`](validate_dataset.py) | Validates a dataset file against the schema. |
+| [`red_team_examples.json`](red_team_examples.json) | 25 adversarial examples from the Red-Team Agent, across all 8 tools. See [Red-team examples](#red-team-examples-m3-s2). |
+| [`benign_edge_cases.json`](benign_edge_cases.json) | 10 "hard benign" examples that stress overblocking. See [Benign edge cases](#benign-edge-cases-m4-s2). |
+| [`validate_dataset.py`](validate_dataset.py) | Validates a single dataset file against the schema. |
+| [`corpus_report.py`](corpus_report.py) | Validates the whole corpus, flags duplicate requests, prints the combined distribution. |
 | [`test_validate_dataset.py`](test_validate_dataset.py) | Positive/negative tests for the schema and validator. |
 | [`test_dataset_v0.py`](test_dataset_v0.py) | Balance and label-consistency tests for `dataset_v0.json`. |
+| [`test_corpus.py`](test_corpus.py) | Combined-corpus and benign-edge-case tests. |
+
+The working dataset is the **corpus**: `dataset_v0.json` +
+`red_team_examples.json` + `benign_edge_cases.json` (85 examples).
+`sample_examples.json` is a schema demo, not part of the corpus.
 
 ---
 
@@ -121,9 +129,9 @@ synthetic (see [PII and safety](#pii-and-safety)).
 
 ---
 
-## Red-team examples (M3-S2)
+## Red-team examples (M3-S2, extended in M4-S2)
 
-[`red_team_examples.json`](red_team_examples.json) is a set of **20 adversarial
+[`red_team_examples.json`](red_team_examples.json) is a set of **25 adversarial
 examples** produced by the Red-Team Agent (see
 [`../agents/`](../agents/README.md)). It is kept separate from `dataset_v0.json`
 so the verified M2 dataset stays stable; regenerate it with
@@ -131,15 +139,52 @@ so the verified M2 dataset stays stable; regenerate it with
 
 | Axis | Counts |
 | --- | --- |
-| `attack_category` | prompt_injection 8 · data_exfiltration 6 · unauthorized_action 6 |
-| `expected_decision` | BLOCK 18 · ASK_APPROVAL 2 |
-| `risk_level` | high 8 · critical 12 |
-| Tools targeted | send_email · read/write/delete_file · send_http_request |
+| `attack_category` | prompt_injection 11 · data_exfiltration 7 · unauthorized_action 7 |
+| `expected_decision` | BLOCK 23 · ASK_APPROVAL 2 |
+| `risk_level` | high 11 · critical 14 |
+| Tools targeted | all 8 tools |
 
 All examples are malicious and synthetic. Prompt-injection examples hide the
 overriding instruction inside `external_context` using a variety of injection
 patterns; exfiltration and unauthorized-action examples carry the risk in the
-proposed tool call itself.
+proposed tool call itself. M4-S2 extended coverage to the calendar, task, and
+GitHub-issue tools so every tool has adversarial examples.
+
+---
+
+## Benign edge cases (M4-S2)
+
+[`benign_edge_cases.json`](benign_edge_cases.json) holds **10 "hard benign"
+examples** that deliberately resemble attacks so the firewall learns not to
+**over-block** (false positives). All are `attack_category: none` with
+`ALLOW` (7) or `ASK_APPROVAL` (3).
+
+Examples include: a request that mentions security keywords ("data breach"), a
+user instruction containing the word "ignore", an internal POST that carries an
+API key, an attachment sent to an internal colleague, and a legitimate external
+recipient the user explicitly authorized. See the
+[overblocking guidance](attack_taxonomy.md) in the taxonomy.
+
+---
+
+## Combined corpus (M4-S2)
+
+The working dataset is the three files together, validated as one corpus by
+[`corpus_report.py`](corpus_report.py):
+
+```bash
+python data/corpus_report.py     # validates all files, flags duplicates, prints distribution
+```
+
+| Axis | Counts |
+| --- | --- |
+| Total | 85 (35 benign · 50 malicious) |
+| `attack_category` | none 35 · prompt_injection 19 · data_exfiltration 15 · unauthorized_action 16 |
+| `expected_decision` | ALLOW 27 · ASK_APPROVAL 12 · BLOCK 46 |
+| Tools | all 8 |
+
+The report exits non-zero if any example is invalid or any `user_request` is
+duplicated within or across files.
 
 ---
 
@@ -160,6 +205,12 @@ python data/validate_dataset.py data/dataset_v0.json
 
 # Validate the red-team examples
 python data/validate_dataset.py data/red_team_examples.json
+
+# Validate the benign edge cases
+python data/validate_dataset.py data/benign_edge_cases.json
+
+# Or validate the whole corpus at once
+python data/corpus_report.py
 
 # Validate any other dataset file
 python data/validate_dataset.py path/to/examples.json
