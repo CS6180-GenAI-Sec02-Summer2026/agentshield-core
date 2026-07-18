@@ -146,8 +146,10 @@ def score_explanation(example: dict, mode: str = "offline") -> dict:
 
     # 4. conciseness
     n = len(words)
-    if n == 0:
-        scores["concise"] = 0
+    if n < 4:
+        scores["concise"] = 0  # not a real explanation
+        if n:
+            notes.append("too terse to be an explanation")
     elif 8 <= n <= 60:
         scores["concise"] = 2
     else:
