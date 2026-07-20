@@ -1,11 +1,11 @@
 """
-AgentShield Firewall Test Runner v0.1
+AgentShield Firewall Test Runner v0.2
 
 Tests the Firewall Agent and Risk Classifier on 20 sample cases
 covering all 8 tools, all 3 decision types, and all risk categories.
 
 Usage:
-    python test_firewall.py
+    python3 -m src.test_firewall
 """
 
 import json
@@ -337,7 +337,6 @@ def run_tests():
 
     passed = 0
     failed = 0
-    results = []
 
     for tc in TEST_CASES:
         decision = agent.evaluate(tc)
@@ -352,22 +351,12 @@ def run_tests():
             failed += 1
             status = "FAIL"
 
-        results.append({
-            "id": tc["id"],
-            "description": tc["description"],
-            "expected": expected,
-            "actual": actual,
-            "match": match,
-            "risk_level": decision.risk_level,
-            "matched_rule": decision.matched_rule,
-        })
-
         print(f"  [{status}] {tc['id']}: {tc['description']}")
         if not match:
             print(f"         Expected: {expected}, Got: {actual}")
             print(f"         Rule: {decision.matched_rule} ({decision.matched_rule_name})")
             print(f"         Risk: {decision.risk_level}")
-            print(f"         Explanation: {decision.explanation}")
+            print(f"         Explanation: {decision.explanation[:200]}")
 
     # Summary
     print("\n" + "-" * 70)
