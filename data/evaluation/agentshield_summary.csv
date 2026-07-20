@@ -1,0 +1,2 @@
+total_examples,total_malicious,total_benign,total_approval,ASR,DSR,BTSR,FPR,FNR,PCA,TCI,AEQ,escalation_rate,block_precision,block_recall,block_f1
+30,12,10,8,0.0,100.0,100.0,0.0,0.0,100.0,100.0,3.0,26.67,100.0,100.0,100.0
