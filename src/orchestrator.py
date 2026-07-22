@@ -1,12 +1,15 @@
 """End-to-end AgentShield orchestration workflow."""
 
 from dataclasses import asdict
+from datetime import datetime, timezone
 from typing import Any
+from uuid import uuid4
 
 from src.baseline_analyzer import BaselineAnalyzer
 from src.firewall_agent import FirewallAgent
 from src.metrics import EvaluationResult, MetricsEngine
 from src.scenario_store import available_datasets, get_scenario, load_scenarios
+from src.schemas import WorkflowStateModel
 from src.target_agent import TargetAgent
 from src.tools import ToolValidationError, blocked_tool_result, execute_mock_tool, list_tool_specs
 
@@ -38,28 +41,47 @@ class AgentShieldOrchestrator:
         execute_allowed_tool: bool = False,
     ) -> dict[str, Any]:
         """Run one scenario through target proposal, firewall, and optional mock execution."""
+        request_id = f"run-{uuid4().hex[:12]}"
+        started_at = datetime.now(timezone.utc).isoformat()
+        stages = ["received"]
         scenario = dict(scenario)
         scenario.setdefault("id", "ad-hoc")
 
         target_result = self.target_agent.propose(scenario)
         proposed_tool_call = target_result.proposed_tool_call
+        stages.append("target_agent_proposed_tool_call")
 
         firewall_input = dict(scenario)
         firewall_input["proposed_tool_call"] = proposed_tool_call
         decision = self.firewall.evaluate(firewall_input)
+        stages.append("firewall_decision_recorded")
 
         tool_result = None
         if decision.decision == "ALLOW" and execute_allowed_tool:
             tool_result = execute_mock_tool(proposed_tool_call)
+            stages.append("mock_tool_executed")
         else:
             tool_result = blocked_tool_result(proposed_tool_call, decision.decision)
+            stages.append("mock_tool_not_executed")
 
         expected = scenario.get("expected_decision")
+        completed_at = datetime.now(timezone.utc).isoformat()
+        workflow_state = WorkflowStateModel(
+            request_id=request_id,
+            status="completed",
+            stages=stages,
+            started_at=started_at,
+            completed_at=completed_at,
+        )
         return {
             "scenario_id": scenario["id"],
+            "request_id": request_id,
             "source_dataset": scenario.get("_source_dataset"),
             "user_request": scenario.get("user_request", ""),
+            "attack_category": scenario.get("attack_category"),
+            "expected_risk_level": scenario.get("risk_level"),
             "external_context_present": bool(scenario.get("external_context")),
+            "workflow_state": _model_to_dict(workflow_state),
             "target_agent": target_result.to_dict(),
             "proposed_tool_call": proposed_tool_call,
             "firewall_decision": decision.to_dict(),
@@ -149,8 +171,8 @@ class AgentShieldOrchestrator:
                 expected_decision=expected,
                 actual_decision=decision["decision"],
                 tool_name=proposed["tool_name"],
-                attack_category=decision["risk_categories"][0] if decision["risk_categories"] else "none",
-                risk_level=decision["risk_level"],
+                attack_category=result.get("attack_category") or "none",
+                risk_level=result.get("expected_risk_level") or decision["risk_level"],
                 tool_call_intact=True,
                 audit_score=3.0 if result["matched_expected"] else 1.0,
             ))
@@ -177,3 +199,9 @@ __all__ = [
     "ToolValidationError",
     "run_ad_hoc",
 ]
+
+
+def _model_to_dict(model: Any) -> dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump()
+    return model.dict()

@@ -2,10 +2,14 @@
 
 from typing import Any
 
-from pydantic import BaseModel, Field
-
 from src.orchestrator import AgentShieldOrchestrator
 from src.scenario_store import available_datasets
+from src.schemas import (
+    BatchRunRequest,
+    DatasetQuery,
+    ScenarioRunRequest,
+    ScenarioRunResponse,
+)
 from src.tools import ToolValidationError, list_tool_specs
 
 try:
@@ -15,24 +19,6 @@ except ImportError:  # pragma: no cover - exercised only in environments without
     FastAPI = None
     HTTPException = None
     CORSMiddleware = None
-
-
-class ScenarioRunRequest(BaseModel):
-    user_request: str | None = None
-    external_context: str | None = None
-    proposed_tool_call: dict[str, Any] | None = None
-    scenario: dict[str, Any] | None = None
-    execute_allowed_tool: bool = False
-
-
-class BatchRunRequest(BaseModel):
-    scenarios: list[dict[str, Any]] | None = None
-    dataset_names: list[str] | None = None
-    execute_allowed_tools: bool = False
-
-
-class DatasetQuery(BaseModel):
-    dataset_names: list[str] | None = Field(default=None)
 
 
 def create_app() -> Any:
@@ -66,10 +52,10 @@ def create_app() -> Any:
     def scenarios() -> dict[str, Any]:
         return orchestrator.list_scenarios()
 
-    @app.post("/run-scenario")
+    @app.post("/run-scenario", response_model=ScenarioRunResponse)
     def run_scenario(request: ScenarioRunRequest) -> dict[str, Any]:
-        scenario = _scenario_from_request(request)
         try:
+            scenario = _scenario_from_request(request)
             return orchestrator.run_scenario(scenario, request.execute_allowed_tool)
         except (ToolValidationError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
@@ -77,8 +63,11 @@ def create_app() -> Any:
     @app.post("/run-batch")
     def run_batch(request: BatchRunRequest) -> dict[str, Any]:
         try:
+            scenarios = None
+            if request.scenarios is not None:
+                scenarios = [_model_to_dict(scenario) for scenario in request.scenarios]
             return orchestrator.run_batch(
-                scenarios=request.scenarios,
+                scenarios=scenarios,
                 dataset_names=request.dataset_names,
                 execute_allowed_tools=request.execute_allowed_tools,
             )
@@ -112,7 +101,7 @@ def create_app() -> Any:
 
 def _scenario_from_request(request: ScenarioRunRequest) -> dict[str, Any]:
     if request.scenario is not None:
-        return dict(request.scenario)
+        return _model_to_dict(request.scenario)
     if not request.user_request:
         raise ValueError("Either scenario or user_request is required.")
     scenario = {
@@ -120,8 +109,14 @@ def _scenario_from_request(request: ScenarioRunRequest) -> dict[str, Any]:
         "external_context": request.external_context,
     }
     if request.proposed_tool_call:
-        scenario["proposed_tool_call"] = request.proposed_tool_call
+        scenario["proposed_tool_call"] = _model_to_dict(request.proposed_tool_call)
     return scenario
+
+
+def _model_to_dict(model: Any) -> dict[str, Any]:
+    if hasattr(model, "model_dump"):
+        return model.model_dump(exclude_none=True)
+    return model.dict(exclude_none=True)
 
 
 try:
