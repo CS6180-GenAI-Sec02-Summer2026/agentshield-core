@@ -4,6 +4,9 @@ Core backend for AgentShield, including multi-agent orchestration, red-team atta
 
 ## Backend Orchestration API
 
+Architecture and lifecycle details live in `docs/architecture.md`; the frontend
+contract lives in `docs/api_contract.md`.
+
 Install runtime dependencies:
 
 ```bash
@@ -38,4 +41,13 @@ Run and export a repeatable experiment:
 
 ```bash
 PYTHONPATH=. python3 src/experiment_runner.py
+```
+
+Run the complete local backend checks:
+
+```bash
+PYTHONPATH=. python3 src/test_orchestrator.py
+PYTHONPATH=. python3 src/test_firewall.py
+PYTHONPATH=. python3 src/test_integration.py
+PYTHONPATH=. python3 src/test_metrics.py
 ```

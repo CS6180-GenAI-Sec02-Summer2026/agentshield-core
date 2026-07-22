@@ -27,6 +27,19 @@
 ```json
 {
   "scenario_id": "sample-001",
+  "request_id": "run-abc123",
+  "workflow_state": {
+    "request_id": "run-abc123",
+    "status": "completed",
+    "stages": [
+      "received",
+      "target_agent_proposed_tool_call",
+      "firewall_decision_recorded",
+      "mock_tool_not_executed"
+    ],
+    "started_at": "2026-07-22T00:00:00+00:00",
+    "completed_at": "2026-07-22T00:00:01+00:00"
+  },
   "target_agent": {
     "mode": "scenario_passthrough",
     "confidence": 1.0,
@@ -45,3 +58,15 @@
   "audit": {}
 }
 ```
+
+## Demo Datasets
+
+`GET /scenarios` loads whichever supported files are present:
+
+- `data/demo_scenarios.json`
+- `data/sample_examples.json`
+- `data/dataset_v0.json`
+- `data/red_team_examples.json`
+- `data/benign_edge_cases.json`
+
+Missing optional corpus files are skipped rather than treated as errors.
