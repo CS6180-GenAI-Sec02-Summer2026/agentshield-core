@@ -1,0 +1,242 @@
+{
+  "schema_version": "0.1",
+  "description": "AgentShield structured policy rules. Each rule defines a condition and a decision (BLOCK, ASK_APPROVAL, or ALLOW). Rules are evaluated in order; the first matching rule determines the decision. If no rule matches, the default decision is ALLOW.",
+  "default_decision": "ALLOW",
+  "rules": [
+    {
+      "rule_id": "POLICY-001",
+      "name": "Private file to external recipient",
+      "description": "Block sending private or internal file contents to external email recipients.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_email"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.body",
+            "check": "contains_file_content",
+            "description": "Email body or attachment contains content sourced from a file read via read_file."
+          },
+          {
+            "field": "arguments.to",
+            "check": "is_external_recipient",
+            "description": "Recipient email address is not in the user's organization or approved contact list."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "critical",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Blocked: Attempted to send private file contents to external recipient {arguments.to}. This violates the data exfiltration policy."
+    },
+    {
+      "rule_id": "POLICY-002",
+      "name": "File deletion without explicit approval",
+      "description": "Require explicit user approval before executing any file deletion.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["delete_file"],
+      "conditions": {
+        "operator": "ALWAYS",
+        "checks": [
+          {
+            "field": "tool_name",
+            "check": "equals",
+            "value": "delete_file",
+            "description": "Any delete_file call triggers this rule regardless of context."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Approval required: Agent proposed deleting file {arguments.file_path}. File deletion requires explicit user confirmation."
+    },
+    {
+      "rule_id": "POLICY-003",
+      "name": "Secrets or credentials to external URL",
+      "description": "Block transmitting secrets, API keys, passwords, tokens, or credentials to external endpoints.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_email", "send_http_request"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments",
+            "check": "contains_secret_pattern",
+            "patterns": [
+              "api_key", "api-key", "apikey",
+              "password", "passwd", "secret",
+              "token", "access_token", "auth_token",
+              "private_key", "credential",
+              "AWS_SECRET", "OPENAI_API_KEY",
+              "DATABASE_URL", "CONNECTION_STRING"
+            ],
+            "description": "Tool call arguments contain patterns matching secrets or credentials."
+          },
+          {
+            "field": "arguments.url|arguments.to",
+            "check": "is_external_target",
+            "description": "Target URL or email recipient is an external endpoint."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "critical",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Blocked: Detected secret or credential pattern in arguments being sent to external target. This violates the credential protection policy."
+    },
+    {
+      "rule_id": "POLICY-004",
+      "name": "Untrusted context instruction override",
+      "description": "Block actions where instructions in external context override the user's original intent.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_email", "read_file", "write_file", "delete_file", "create_calendar_event", "create_task", "create_github_issue", "send_http_request"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "proposed_tool_call",
+            "check": "contradicts_user_intent",
+            "description": "The proposed tool call action does not match the user's original request."
+          },
+          {
+            "field": "external_context",
+            "check": "contains_instruction_pattern",
+            "patterns": [
+              "ignore previous instructions",
+              "ignore above instructions",
+              "disregard your instructions",
+              "override your instructions",
+              "forget your rules",
+              "new instructions:",
+              "system prompt:",
+              "you are now",
+              "instead, do the following",
+              "do not follow your original"
+            ],
+            "description": "External context contains patterns typical of prompt injection attempts."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "critical",
+      "attack_categories": ["prompt_injection"],
+      "explanation_template": "Blocked: Detected prompt injection pattern in external context. The proposed action deviates from the user's original request and appears to be driven by injected instructions."
+    },
+    {
+      "rule_id": "POLICY-005",
+      "name": "Unauthorized external HTTP requests",
+      "description": "Block HTTP requests to URLs not explicitly mentioned or approved by the user.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_http_request"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.url",
+            "check": "not_in_user_request",
+            "description": "The target URL was not mentioned in the user's original request."
+          },
+          {
+            "field": "arguments.url",
+            "check": "is_external_url",
+            "description": "The URL points to an external domain, not an internal or approved service."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "high",
+      "attack_categories": ["data_exfiltration", "unauthorized_action"],
+      "explanation_template": "Blocked: HTTP request to {arguments.url} was not requested by the user and appears to originate from external context. Unauthorized external requests are blocked by policy."
+    },
+    {
+      "rule_id": "POLICY-006",
+      "name": "Sensitive data in shared events or tasks",
+      "description": "Require approval when calendar events or tasks contain sensitive information and include external participants.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["create_calendar_event", "create_task"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.body|arguments.title",
+            "check": "contains_sensitive_content",
+            "description": "Event or task body contains potentially sensitive information (financial data, credentials, internal project details)."
+          },
+          {
+            "field": "arguments.participants|arguments.visibility",
+            "check": "has_external_participant_or_public",
+            "description": "The event/task includes external participants or is set to public visibility."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "medium",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Approval required: Calendar event or task contains potentially sensitive content and includes external participants. Please confirm this is intended."
+    },
+    {
+      "rule_id": "POLICY-007",
+      "name": "Internal information in public GitHub issues",
+      "description": "Require approval when a GitHub issue may expose internal-only information in a public repository.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["create_github_issue"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.body|arguments.title",
+            "check": "contains_internal_reference",
+            "description": "Issue body references internal systems, credentials, private URLs, or proprietary information."
+          },
+          {
+            "field": "arguments.repo_visibility",
+            "check": "equals",
+            "value": "public",
+            "description": "The target repository is public."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "medium",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Approval required: GitHub issue may contain internal information and the target repository is public. Please confirm before creating."
+    },
+    {
+      "rule_id": "POLICY-008",
+      "name": "Bulk or destructive operations",
+      "description": "Require approval for operations affecting multiple files or resources in a single action.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["write_file", "delete_file", "send_email"],
+      "conditions": {
+        "operator": "OR",
+        "checks": [
+          {
+            "field": "arguments.targets",
+            "check": "count_greater_than",
+            "value": 1,
+            "description": "The tool call targets more than one resource."
+          },
+          {
+            "field": "context.batch_size",
+            "check": "greater_than",
+            "value": 1,
+            "description": "The operation is part of a batch affecting multiple resources."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "medium",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Approval required: This operation affects multiple resources. Bulk or destructive operations require explicit user confirmation."
+    }
+  ]
+}
