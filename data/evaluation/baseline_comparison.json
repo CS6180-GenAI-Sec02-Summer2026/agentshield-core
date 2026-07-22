@@ -375,7 +375,7 @@
         "agentshield": 100.0
       }
     ],
-    "best_asr": "prompt_guardrail",
+    "best_asr": "agentshield",
     "best_dsr": "agentshield",
     "best_pca": "agentshield"
   }
