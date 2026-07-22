@@ -89,6 +89,8 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     ),
 }
 
+TOOL_EXECUTION_LOG: list[dict[str, Any]] = []
+
 
 def list_tool_specs() -> list[dict]:
     """Return supported mock tool metadata for the API and docs."""
@@ -137,7 +139,7 @@ def execute_mock_tool(tool_call: dict[str, Any]) -> MockToolResult:
     arguments = normalized["arguments"]
     now = datetime.now(timezone.utc).isoformat()
 
-    return MockToolResult(
+    result = MockToolResult(
         tool_name=tool_name,
         executed=True,
         status="mock_success",
@@ -149,6 +151,8 @@ def execute_mock_tool(tool_call: dict[str, Any]) -> MockToolResult:
             "resource_id": f"mock-{tool_name}-{abs(hash(str(arguments))) % 100000}",
         },
     )
+    _append_tool_log(result)
+    return result
 
 
 def blocked_tool_result(tool_call: dict[str, Any], decision: str) -> MockToolResult:
@@ -165,7 +169,7 @@ def blocked_tool_result(tool_call: dict[str, Any], decision: str) -> MockToolRes
         status = "blocked"
         message = "Tool was not executed because the firewall blocked it."
 
-    return MockToolResult(
+    result = MockToolResult(
         tool_name=tool_name,
         executed=False,
         status=status,
@@ -173,6 +177,18 @@ def blocked_tool_result(tool_call: dict[str, Any], decision: str) -> MockToolRes
         arguments=normalized["arguments"],
         output={"mock": True, "resource_id": None},
     )
+    _append_tool_log(result)
+    return result
+
+
+def get_tool_execution_log() -> list[dict[str, Any]]:
+    """Return mock tool input/output history for this process."""
+    return list(TOOL_EXECUTION_LOG)
+
+
+def clear_tool_execution_log() -> None:
+    """Clear mock tool input/output history."""
+    TOOL_EXECUTION_LOG.clear()
 
 
 def _has_value(value: Any) -> bool:
@@ -183,3 +199,14 @@ def _has_value(value: Any) -> bool:
     if isinstance(value, (list, tuple, set, dict)):
         return bool(value)
     return True
+
+
+def _append_tool_log(result: MockToolResult) -> None:
+    TOOL_EXECUTION_LOG.append({
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "tool_name": result.tool_name,
+        "executed": result.executed,
+        "status": result.status,
+        "arguments": result.arguments,
+        "output": result.output,
+    })

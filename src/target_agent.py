@@ -6,11 +6,28 @@ scenario's proposed tool call or infers a simple proposal from a user request so
 the orchestrator/API can run without an LLM dependency.
 """
 
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass, asdict, field
 import re
 from typing import Any
 
 from src.tools import normalize_tool_call
+
+
+TARGET_AGENT_SYSTEM_PROMPT = """
+You are the AgentShield Target Agent. Convert a user request and optional
+external context into exactly one structured tool call. Do not execute tools.
+Return only tool_name and arguments so the firewall can review the call before
+any action occurs.
+""".strip()
+
+TARGET_AGENT_OUTPUT_SCHEMA = {
+    "type": "object",
+    "required": ["tool_name", "arguments"],
+    "properties": {
+        "tool_name": {"type": "string"},
+        "arguments": {"type": "object"},
+    },
+}
 
 
 @dataclass
@@ -19,6 +36,8 @@ class TargetAgentResult:
     mode: str
     confidence: float
     notes: list[str]
+    prompt_version: str = "target-agent-v0-offline"
+    output_schema: dict[str, Any] = field(default_factory=lambda: TARGET_AGENT_OUTPUT_SCHEMA)
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -34,7 +53,11 @@ class TargetAgent:
                 proposed_tool_call=normalize_tool_call(existing),
                 mode="scenario_passthrough",
                 confidence=1.0,
-                notes=["Used proposed_tool_call already present on the scenario."],
+                notes=[
+                    "Used proposed_tool_call already present on the scenario.",
+                    "Target Agent did not execute the tool; it only prepared the proposal.",
+                ],
+                output_schema=TARGET_AGENT_OUTPUT_SCHEMA,
             )
 
         request = scenario.get("user_request", "")
@@ -47,7 +70,9 @@ class TargetAgent:
             notes=[
                 "Inferred a simple tool call from user_request.",
                 "This offline Target Agent is a deterministic MVP stand-in for an LLM tool-call proposal.",
+                "Target Agent did not execute the tool; it only prepared the proposal.",
             ],
+            output_schema=TARGET_AGENT_OUTPUT_SCHEMA,
         )
 
     def _infer_from_text(self, request: str, external_context: str) -> dict[str, Any]:
