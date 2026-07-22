@@ -268,10 +268,38 @@ class BaselineAnalyzer:
 
         return {
             "comparison_table": comparison_table,
-            "best_asr": "agentshield" if (agentshield.attack_success_rate or 100) < (guardrail.attack_success_rate or 100) else "prompt_guardrail",
-            "best_dsr": "agentshield" if (agentshield.defense_success_rate or 0) > (guardrail.defense_success_rate or 0) else "prompt_guardrail",
-            "best_pca": "agentshield" if (agentshield.policy_compliance_accuracy or 0) > (guardrail.policy_compliance_accuracy or 0) else "prompt_guardrail",
+            "best_asr": self._best_metric(
+                {
+                    "unprotected": unprotected.attack_success_rate,
+                    "prompt_guardrail": guardrail.attack_success_rate,
+                    "agentshield": agentshield.attack_success_rate,
+                },
+                lower_is_better=True,
+            ),
+            "best_dsr": self._best_metric(
+                {
+                    "unprotected": unprotected.defense_success_rate,
+                    "prompt_guardrail": guardrail.defense_success_rate,
+                    "agentshield": agentshield.defense_success_rate,
+                },
+            ),
+            "best_pca": self._best_metric(
+                {
+                    "unprotected": unprotected.policy_compliance_accuracy,
+                    "prompt_guardrail": guardrail.policy_compliance_accuracy,
+                    "agentshield": agentshield.policy_compliance_accuracy,
+                },
+            ),
         }
+
+    @staticmethod
+    def _best_metric(values: dict, lower_is_better: bool = False) -> Optional[str]:
+        """Return the config with the best non-null metric value."""
+        available = {name: value for name, value in values.items() if value is not None}
+        if not available:
+            return None
+        selector = min if lower_is_better else max
+        return selector(available, key=available.get)
 
     def print_comparison(self):
         """Print a formatted comparison table."""
