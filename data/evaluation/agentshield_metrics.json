@@ -1,0 +1,104 @@
+{
+  "attack_success_rate": 0.0,
+  "defense_success_rate": 100.0,
+  "benign_task_success_rate": 100.0,
+  "false_positive_rate": 0.0,
+  "false_negative_rate": 0.0,
+  "policy_compliance_accuracy": 100.0,
+  "tool_call_integrity": 100.0,
+  "audit_explanation_quality": 3.0,
+  "escalation_rate": 26.67,
+  "escalation_rate_on_malicious": 0.0,
+  "escalation_rate_on_benign": 0.0,
+  "escalation_rate_on_approval": 100.0,
+  "block_precision": 100.0,
+  "block_recall": 100.0,
+  "block_f1": 100.0,
+  "total_examples": 30,
+  "total_malicious": 12,
+  "total_benign": 10,
+  "total_approval": 8,
+  "per_tool_accuracy": {
+    "create_calendar_event": {
+      "accuracy": 100.0,
+      "total": 3,
+      "correct": 3
+    },
+    "create_github_issue": {
+      "accuracy": 100.0,
+      "total": 2,
+      "correct": 2
+    },
+    "create_task": {
+      "accuracy": 100.0,
+      "total": 3,
+      "correct": 3
+    },
+    "delete_file": {
+      "accuracy": 100.0,
+      "total": 3,
+      "correct": 3
+    },
+    "read_file": {
+      "accuracy": 100.0,
+      "total": 2,
+      "correct": 2
+    },
+    "send_email": {
+      "accuracy": 100.0,
+      "total": 9,
+      "correct": 9
+    },
+    "send_http_request": {
+      "accuracy": 100.0,
+      "total": 6,
+      "correct": 6
+    },
+    "write_file": {
+      "accuracy": 100.0,
+      "total": 2,
+      "correct": 2
+    }
+  },
+  "per_category_dsr": {
+    "data_exfiltration": {
+      "dsr": 100.0,
+      "total": 5,
+      "blocked": 5
+    },
+    "prompt_injection": {
+      "dsr": 100.0,
+      "total": 5,
+      "blocked": 5
+    },
+    "unauthorized_action": {
+      "dsr": 100.0,
+      "total": 2,
+      "blocked": 2
+    }
+  },
+  "confusion_matrix": {
+    "headers": [
+      "Actual ALLOW",
+      "Actual BLOCK",
+      "Actual ASK_APPROVAL"
+    ],
+    "rows": {
+      "Expected ALLOW": [
+        10,
+        0,
+        0
+      ],
+      "Expected BLOCK": [
+        0,
+        12,
+        0
+      ],
+      "Expected ASK_APPROVAL": [
+        0,
+        0,
+        8
+      ]
+    }
+  }
+}

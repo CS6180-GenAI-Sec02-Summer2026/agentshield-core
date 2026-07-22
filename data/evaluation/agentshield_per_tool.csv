@@ -1,0 +1,9 @@
+tool,accuracy,correct,total
+create_calendar_event,100.0,3,3
+create_github_issue,100.0,2,2
+create_task,100.0,3,3
+delete_file,100.0,3,3
+read_file,100.0,2,2
+send_email,100.0,9,9
+send_http_request,100.0,6,6
+write_file,100.0,2,2

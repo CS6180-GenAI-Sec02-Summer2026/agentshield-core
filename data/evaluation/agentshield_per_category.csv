@@ -1,0 +1,4 @@
+attack_category,dsr,blocked,total
+data_exfiltration,100.0,5,5
+prompt_injection,100.0,5,5
+unauthorized_action,100.0,2,2
