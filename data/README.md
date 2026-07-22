@@ -28,6 +28,11 @@ policy compliance) is computed from these labels.
 | [`benign_edge_cases.json`](benign_edge_cases.json) | 10 "hard benign" examples that stress overblocking. See [Benign edge cases](#benign-edge-cases-m4-s2). |
 | [`validate_dataset.py`](validate_dataset.py) | Validates a single dataset file against the schema. |
 | [`corpus_report.py`](corpus_report.py) | Validates the whole corpus, flags duplicate requests, prints the combined distribution. |
+| [`quality_report.py`](quality_report.py) | Label-distribution summary + flags examples with a debatable decision. |
+| [`ambiguity_review.md`](ambiguity_review.md) | Manual review of the flagged debatable decisions. |
+| [`audit_rubric.md`](audit_rubric.md) | Rubric for scoring audit-explanation quality. |
+| [`audit_scores.json`](audit_scores.json) | Judge scores for every corpus explanation (generated). |
+| [`judge_vs_manual.md`](judge_vs_manual.md) | Judge-vs-manual agreement check. |
 | [`test_validate_dataset.py`](test_validate_dataset.py) | Positive/negative tests for the schema and validator. |
 | [`test_dataset_v0.py`](test_dataset_v0.py) | Balance and label-consistency tests for `dataset_v0.json`. |
 | [`test_corpus.py`](test_corpus.py) | Combined-corpus and benign-edge-case tests. |
@@ -185,6 +190,27 @@ python data/corpus_report.py     # validates all files, flags duplicates, prints
 
 The report exits non-zero if any example is invalid or any `user_request` is
 duplicated within or across files.
+
+---
+
+## Dataset validation & audit rubric (M5-S2)
+
+Quality checks and the audit-explanation rubric live alongside the dataset:
+
+```bash
+python data/quality_report.py     # label distribution + flags debatable decisions
+python agents/score_audit.py      # score every explanation -> data/audit_scores.json
+python agents/judge_vs_manual.py  # judge vs manual agreement
+```
+
+- **Label quality / ambiguity** — [`quality_report.py`](quality_report.py) flags
+  examples whose `expected_decision` is debatable; the review and rationale are in
+  [`ambiguity_review.md`](ambiguity_review.md) (all 12 flagged cases reviewed, no
+  mislabels found).
+- **Audit rubric** — [`audit_rubric.md`](audit_rubric.md) scores *explanation
+  quality only* (five criteria, 0-2 each). The offline judge averages 9.4/10 over
+  the corpus; scores are in [`audit_scores.json`](audit_scores.json). See the
+  [audit judge](../agents/README.md#audit-judge-m5-s2).
 
 ---
 
