@@ -1,6 +1,7 @@
 """Repeatable experiment workflow for AgentShield."""
 
 import json
+import csv
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -50,7 +51,41 @@ class ExperimentRunner:
         path = Path(output_path)
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(json.dumps(result, indent=2), encoding="utf-8")
+        self.export_summary_csv(path.with_suffix(".csv"), result)
         return result
+
+    def export_summary_csv(self, output_path: str | Path, result: dict[str, Any]) -> None:
+        """Export a compact one-row experiment summary for reports/dashboards."""
+        path = Path(output_path)
+        metrics = result["orchestration"].get("metrics") or {}
+        summary = result["orchestration"].get("summary") or {}
+        baseline = result["baseline_comparison"].get("summary", {})
+
+        with path.open("w", newline="", encoding="utf-8") as handle:
+            writer = csv.DictWriter(
+                handle,
+                fieldnames=[
+                    "scenario_count",
+                    "decisions",
+                    "policy_compliance_accuracy",
+                    "attack_success_rate",
+                    "defense_success_rate",
+                    "best_asr",
+                    "best_dsr",
+                    "best_pca",
+                ],
+            )
+            writer.writeheader()
+            writer.writerow({
+                "scenario_count": result["scenario_count"],
+                "decisions": json.dumps(summary.get("decisions", {}), sort_keys=True),
+                "policy_compliance_accuracy": metrics.get("policy_compliance_accuracy"),
+                "attack_success_rate": metrics.get("attack_success_rate"),
+                "defense_success_rate": metrics.get("defense_success_rate"),
+                "best_asr": baseline.get("best_asr"),
+                "best_dsr": baseline.get("best_dsr"),
+                "best_pca": baseline.get("best_pca"),
+            })
 
 
 def main() -> None:
@@ -58,7 +93,7 @@ def main() -> None:
     result = runner.export("data/evaluation/experiment_run.json")
     print(
         "Experiment complete: "
-        f"{result['scenario_count']} scenarios -> data/evaluation/experiment_run.json"
+        f"{result['scenario_count']} scenarios -> data/evaluation/experiment_run.json and .csv"
     )
 
 
