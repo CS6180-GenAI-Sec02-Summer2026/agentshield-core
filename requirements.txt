@@ -1,0 +1,5 @@
+fastapi>=0.111
+uvicorn[standard]>=0.30
+pydantic>=2
+jsonschema>=4.22
+pytest>=8
