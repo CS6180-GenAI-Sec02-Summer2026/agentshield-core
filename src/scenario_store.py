@@ -9,6 +9,7 @@ REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
 
 DATASET_FILES = {
+    "demo": "demo_scenarios.json",
     "sample": "sample_examples.json",
     "dataset_v0": "dataset_v0.json",
     "red_team": "red_team_examples.json",
