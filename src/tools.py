@@ -90,6 +90,7 @@ TOOL_SPECS: dict[str, ToolSpec] = {
 }
 
 TOOL_EXECUTION_LOG: list[dict[str, Any]] = []
+MAX_TOOL_EXECUTION_LOG_ENTRIES = 1000
 
 
 def list_tool_specs() -> list[dict]:
@@ -210,3 +211,5 @@ def _append_tool_log(result: MockToolResult) -> None:
         "arguments": result.arguments,
         "output": result.output,
     })
+    if len(TOOL_EXECUTION_LOG) > MAX_TOOL_EXECUTION_LOG_ENTRIES:
+        del TOOL_EXECUTION_LOG[:-MAX_TOOL_EXECUTION_LOG_ENTRIES]
