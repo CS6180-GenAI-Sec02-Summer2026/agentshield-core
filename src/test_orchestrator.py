@@ -6,8 +6,10 @@ from src.orchestrator import AgentShieldOrchestrator, run_ad_hoc
 from src.scenario_store import available_datasets, load_scenarios
 from src.target_agent import TargetAgent
 from src.tools import (
+    MAX_TOOL_EXECUTION_LOG_ENTRIES,
     ToolValidationError,
     clear_tool_execution_log,
+    execute_mock_tool,
     get_tool_execution_log,
     normalize_tool_call,
 )
@@ -115,6 +117,20 @@ def test_allowed_mock_execution_logs_input_output():
     assert log[0]["output"]["mock"] is True
 
 
+def test_mock_tool_execution_log_is_capped():
+    clear_tool_execution_log()
+    for index in range(MAX_TOOL_EXECUTION_LOG_ENTRIES + 5):
+        execute_mock_tool({
+            "tool_name": "create_task",
+            "arguments": {"title": f"task-{index}"},
+        })
+
+    log = get_tool_execution_log()
+    assert len(log) == MAX_TOOL_EXECUTION_LOG_ENTRIES
+    assert log[0]["arguments"]["title"] == "task-5"
+    assert log[-1]["arguments"]["title"] == f"task-{MAX_TOOL_EXECUTION_LOG_ENTRIES + 4}"
+
+
 def test_api_request_conversion():
     request = ScenarioRunRequest(
         user_request="Read notes.txt",
@@ -140,6 +156,7 @@ def main():
         test_demo_scenarios_cover_decision_paths,
         test_ad_hoc_inference,
         test_allowed_mock_execution_logs_input_output,
+        test_mock_tool_execution_log_is_capped,
         test_api_request_conversion,
         test_experiment_runner_smoke,
     ]
