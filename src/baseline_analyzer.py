@@ -352,8 +352,8 @@ class BaselineAnalyzer:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         import csv
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["metric", "unprotected", "prompt_guardrail", "agentshield"])
             for row in self.comparison.summary["comparison_table"]:
                 writer.writerow([

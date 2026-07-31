@@ -1,9 +1,9 @@
 """
 Deterministic target-agent layer for AgentShield.
 
-This is intentionally offline and predictable. It either forwards an existing
-scenario's proposed tool call or infers a simple proposal from a user request so
-the orchestrator/API can run without an LLM dependency.
+This deterministic layer either forwards an existing scenario's proposed tool
+call or infers a simple proposal from a user request so the orchestrator and API
+can run without external model dependencies.
 """
 
 from dataclasses import dataclass, asdict, field
@@ -36,7 +36,7 @@ class TargetAgentResult:
     mode: str
     confidence: float
     notes: list[str]
-    prompt_version: str = "target-agent-v0-offline"
+    prompt_version: str = "target-agent-deterministic"
     output_schema: dict[str, Any] = field(default_factory=lambda: TARGET_AGENT_OUTPUT_SCHEMA)
 
     def to_dict(self) -> dict:
@@ -44,7 +44,7 @@ class TargetAgentResult:
 
 
 class TargetAgent:
-    """Offline Target Agent that proposes structured mock tool calls."""
+    """Target Agent that proposes structured mock tool calls."""
 
     def propose(self, scenario: dict[str, Any]) -> TargetAgentResult:
         existing = scenario.get("proposed_tool_call")
@@ -69,7 +69,7 @@ class TargetAgent:
             confidence=0.62,
             notes=[
                 "Inferred a simple tool call from user_request.",
-                "This offline Target Agent is a deterministic MVP stand-in for an LLM tool-call proposal.",
+                "Used deterministic local inference for the tool-call proposal.",
                 "Target Agent did not execute the tool; it only prepared the proposal.",
             ],
             output_schema=TARGET_AGENT_OUTPUT_SCHEMA,

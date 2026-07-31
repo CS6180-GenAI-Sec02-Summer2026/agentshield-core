@@ -77,6 +77,16 @@ def test_run_batch_metrics():
     assert result["summary"]["total"] == result["total"]
 
 
+def test_metrics_does_not_append_audit_log():
+    orchestrator = AgentShieldOrchestrator()
+    orchestrator.run_scenario(load_scenarios(["demo"])[0])
+    before = orchestrator.audit_log()["summary"]["total"]
+    metrics = orchestrator.metrics(dataset_names=["demo"])
+    after = orchestrator.audit_log()["summary"]["total"]
+    assert metrics["total_examples"] == 3
+    assert before == after == 1
+
+
 def test_demo_scenarios_cover_decision_paths():
     result = AgentShieldOrchestrator().run_batch(dataset_names=["demo"])
     assert result["summary"]["decisions"] == {
@@ -153,6 +163,7 @@ def main():
         test_health_and_scenarios,
         test_run_one_stored_scenario,
         test_run_batch_metrics,
+        test_metrics_does_not_append_audit_log,
         test_demo_scenarios_cover_decision_paths,
         test_ad_hoc_inference,
         test_allowed_mock_execution_logs_input_output,

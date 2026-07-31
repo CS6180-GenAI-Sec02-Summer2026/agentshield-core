@@ -15,6 +15,11 @@
     "explanation"
   ],
   "properties": {
+    "id": {
+      "type": "string",
+      "minLength": 1,
+      "description": "Optional stable identifier for scenario lookup, audit output, and reports."
+    },
     "user_request": {
       "type": "string",
       "minLength": 1,

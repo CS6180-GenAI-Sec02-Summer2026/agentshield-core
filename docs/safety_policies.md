@@ -114,6 +114,20 @@ These policies define the security rules that the AgentShield Firewall will enfo
 
 ---
 
+## Policy 9: Unauthorized File Deletion
+
+**Rule:** Block file deletion when the user requested a read-only, listing, or otherwise non-destructive action.
+
+**Applies to:** `delete_file`
+
+**Condition:** The proposed `delete_file` call contradicts the user's original request.
+
+**Decision:** BLOCK
+
+**Example:** User asks to list a folder, but the agent proposes recursively deleting that folder.
+
+---
+
 ## Summary Table
 
 | # | Policy | Tools | Decision |
@@ -126,3 +140,4 @@ These policies define the security rules that the AgentShield Firewall will enfo
 | 6 | Sensitive data in shared events/tasks | create_calendar_event, create_task | ASK_APPROVAL |
 | 7 | Internal info in public GitHub issues | create_github_issue | ASK_APPROVAL |
 | 8 | Bulk or destructive operations | write_file, delete_file, send_email | ASK_APPROVAL |
+| 9 | Unauthorized file deletion | delete_file | BLOCK |

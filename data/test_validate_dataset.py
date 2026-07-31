@@ -21,6 +21,7 @@ HERE = Path(__file__).resolve().parent
 VALIDATOR = HERE / "validate_dataset.py"
 SCHEMA_PATH = HERE / "dataset_schema.json"
 SAMPLES_PATH = HERE / "sample_examples.json"
+DEMO_PATH = HERE / "demo_scenarios.json"
 
 VALID_EXAMPLE = {
     "user_request": "Read my notes file notes.txt.",
@@ -58,8 +59,9 @@ def _run_validator(payload):
 # --- Positive tests -------------------------------------------------------
 
 def test_committed_samples_are_valid():
-    """The real sample dataset must pass validation."""
+    """The committed sample datasets must pass validation."""
     assert _run_validator(json.loads(SAMPLES_PATH.read_text(encoding="utf-8"))) == 0
+    assert _run_validator(json.loads(DEMO_PATH.read_text(encoding="utf-8"))) == 0
 
 
 def test_minimal_valid_example_passes():

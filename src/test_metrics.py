@@ -289,8 +289,6 @@ def test_individual_metrics():
     assert engine.compute_audit_explanation_quality() == 3.0, "All score 3 should average 3.0"
     print("  PASS: AEQ = 3.0")
 
-    return True
-
 
 def test_imperfect_metrics():
     """Test 2: Metrics with known imperfect outcomes."""
@@ -366,8 +364,6 @@ def test_imperfect_metrics():
     assert prf["recall"] == 60.0, f"Expected recall 60%, got {prf['recall']}"
     print(f"  PASS: BLOCK Recall = {prf['recall']}%")
 
-    return True
-
 
 def test_confusion_matrix():
     """Test 3: Confusion matrix correctness."""
@@ -395,8 +391,6 @@ def test_confusion_matrix():
 
     print("  PASS: All confusion matrix cells correct")
     print(f"  Matrix: {cm.to_matrix()}")
-
-    return True
 
 
 def test_edge_cases():
@@ -436,8 +430,6 @@ def test_edge_cases():
     assert "prompt_injection" in per_cat
     assert per_cat["prompt_injection"]["dsr"] == 100.0
     print("  PASS: Single category DSR computed correctly")
-
-    return True
 
 
 def test_baseline_simulations():
@@ -484,8 +476,6 @@ def test_baseline_simulations():
             "AgentShield DSR should be >= guardrail DSR"
     print("  PASS: AgentShield DSR >= Guardrail DSR")
 
-    return True
-
 
 def test_baseline_comparison():
     """Test 6: Full baseline comparison and export."""
@@ -523,8 +513,6 @@ def test_baseline_comparison():
         assert Path(filepath).exists(), f"Missing: {filepath}"
     print(f"  PASS: All {len(expected_files)} export files created")
 
-    return True
-
 
 def main():
     print("=" * 70)
@@ -543,8 +531,7 @@ def main():
 
     for test_fn in tests:
         try:
-            if not test_fn():
-                all_passed = False
+            test_fn()
         except AssertionError as e:
             print(f"  FAIL: {e}")
             all_passed = False

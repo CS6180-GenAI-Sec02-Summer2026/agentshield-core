@@ -74,7 +74,7 @@ Each check in the `checks` array has a `field`, a `check` type, and optionally a
 | `is_external_recipient` | Checks if email recipient is outside the organization | POLICY-001 |
 | `contains_secret_pattern` | Matches credential patterns (API keys, passwords, tokens) against a patterns list | POLICY-003 |
 | `is_external_target` | Checks if target URL or email is external | POLICY-003 |
-| `contradicts_user_intent` | Detects if the proposed tool call doesn't match the user's original request | POLICY-004 |
+| `contradicts_user_intent` | Detects if the proposed tool call doesn't match the user's original request | POLICY-004, POLICY-009 |
 | `contains_instruction_pattern` | Matches prompt injection phrases in external context against a patterns list | POLICY-004 |
 | `not_in_user_request` | Checks if a URL was not mentioned by the user | POLICY-005 |
 | `is_external_url` | Checks if a URL points to an external domain | POLICY-005 |

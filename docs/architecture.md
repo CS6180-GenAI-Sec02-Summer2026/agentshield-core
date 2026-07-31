@@ -11,7 +11,7 @@ and API responses.
 | Module | Responsibility |
 |---|---|
 | `src/tools.py` | Supported tool registry, required argument validation, safe mock execution, input/output log. |
-| `src/target_agent.py` | Offline deterministic Target Agent and structured tool-call proposal format. |
+| `src/target_agent.py` | Deterministic Target Agent and structured tool-call proposal format. |
 | `src/scenario_store.py` | Loads demo/sample/future corpus scenario files from `data/`. |
 | `src/orchestrator.py` | End-to-end workflow: scenario -> Target Agent -> Firewall -> mock tool result -> audit/metrics. |
 | `src/api.py` | FastAPI app, CORS, frontend endpoints, request validation. |
@@ -57,5 +57,5 @@ Every scenario run returns a compact `workflow_state` object:
 ## Safety Boundary
 
 Mock tools never perform real side effects. `ALLOW` only means the firewall would
-permit the call. Real-world execution is outside the MVP scope and should stay
-behind explicit approval and integration controls.
+permit the call. Real-world execution remains behind explicit approval and
+integration controls.

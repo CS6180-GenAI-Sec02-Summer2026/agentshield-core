@@ -474,8 +474,8 @@ class MetricsEngine:
             report.block_precision, report.block_recall, report.block_f1,
         ]
 
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(headers)
             writer.writerow(row)
         print(f"Metrics summary CSV exported to {filepath}")
@@ -487,8 +487,8 @@ class MetricsEngine:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow([""] + matrix["headers"])
             for row_label, values in matrix["rows"].items():
                 writer.writerow([row_label] + values)
@@ -500,8 +500,8 @@ class MetricsEngine:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["tool", "accuracy", "correct", "total"])
             for tool, data in per_tool.items():
                 writer.writerow([tool, data["accuracy"], data["correct"], data["total"]])
@@ -513,8 +513,8 @@ class MetricsEngine:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["attack_category", "dsr", "blocked", "total"])
             for cat, data in per_cat.items():
                 writer.writerow([cat, data["dsr"], data["blocked"], data["total"]])

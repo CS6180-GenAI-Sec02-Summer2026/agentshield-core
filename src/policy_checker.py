@@ -21,9 +21,13 @@ Usage:
 """
 
 import json
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from pathlib import Path
-from typing import Optional
+
+from src.intent_utils import delete_is_authorized_by_request
+
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass
@@ -72,11 +76,10 @@ class PolicyChecker:
 
     def _load_rules(self, filepath: str) -> list[dict]:
         """Load rules from JSON."""
-        path = Path(filepath)
+        path = _resolve_rules_path(filepath)
         if not path.exists():
-            print(f"Warning: Rules file not found at {filepath}.")
-            return []
-        with open(path, "r") as f:
+            raise FileNotFoundError(f"Rules file not found: {filepath}")
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         rules = data.get("rules", [])
         rules.sort(key=lambda r: r.get("priority", 99))
@@ -92,6 +95,7 @@ class PolicyChecker:
             return str(arguments)
         parts = []
         for key, value in arguments.items():
+            parts.append(str(key))
             if isinstance(value, str):
                 parts.append(value)
             elif isinstance(value, list):
@@ -175,18 +179,20 @@ class PolicyChecker:
         elif check_type == "contradicts_user_intent":
             tool_name = proposed.get("tool_name", "")
             request_lower = user_request.lower()
-            intent_map = {
-                "send_email": ["send", "email", "mail", "forward", "reply"],
-                "read_file": ["read", "open", "view", "show", "look at"],
-                "write_file": ["write", "save", "create file", "update file"],
-                "delete_file": ["delete", "remove", "clean up"],
-                "create_calendar_event": ["calendar", "schedule", "meeting", "event"],
-                "create_task": ["task", "todo", "reminder", "assign"],
-                "create_github_issue": ["issue", "bug", "ticket", "github"],
-                "send_http_request": ["http", "request", "api", "fetch", "post", "get"],
-            }
-            expected = intent_map.get(tool_name, [])
-            user_intended = any(kw in request_lower for kw in expected)
+            if tool_name == "delete_file":
+                user_intended = delete_is_authorized_by_request(request_lower)
+            else:
+                intent_map = {
+                    "send_email": ["send", "email", "mail", "forward", "reply"],
+                    "read_file": ["read", "open", "view", "show", "look at"],
+                    "write_file": ["write", "save", "create file", "update file"],
+                    "create_calendar_event": ["calendar", "schedule", "meeting", "event"],
+                    "create_task": ["task", "todo", "reminder", "assign"],
+                    "create_github_issue": ["issue", "bug", "ticket", "github"],
+                    "send_http_request": ["http", "request", "api", "fetch", "post", "get"],
+                }
+                expected = intent_map.get(tool_name, [])
+                user_intended = any(kw in request_lower for kw in expected)
             contradicts = not user_intended
             return contradicts, f"Tool '{tool_name}' {'contradicts' if contradicts else 'matches'} user intent"
 
@@ -394,3 +400,13 @@ class PolicyChecker:
             "attack_categories": sorted(categories_covered),
             "decisions": decisions,
         }
+
+
+def _resolve_rules_path(filepath: str) -> Path:
+    path = Path(filepath)
+    if path.is_absolute():
+        return path
+    cwd_path = Path.cwd() / path
+    if cwd_path.exists():
+        return cwd_path
+    return REPO_ROOT / path

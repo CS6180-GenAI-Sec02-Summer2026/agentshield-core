@@ -76,11 +76,11 @@ def create_app() -> Any:
 
     @app.get("/metrics")
     def metrics() -> dict[str, Any]:
-        return orchestrator.run_batch()["metrics"] or {"message": "No labeled scenarios available."}
+        return orchestrator.metrics() or {"message": "No labeled scenarios available."}
 
     @app.post("/metrics")
     def metrics_for_datasets(request: DatasetQuery) -> dict[str, Any]:
-        return orchestrator.run_batch(dataset_names=request.dataset_names)["metrics"] or {
+        return orchestrator.metrics(dataset_names=request.dataset_names) or {
             "message": "No labeled scenarios available."
         }
 
