@@ -78,7 +78,7 @@ class PolicyChecker:
         """Load rules from JSON."""
         path = _resolve_rules_path(filepath)
         if not path.exists():
-            raise FileNotFoundError(f"Rules file not found: {filepath}")
+            raise FileNotFoundError(f"Rules file not found: {filepath} (resolved to {path})")
         with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
         rules = data.get("rules", [])
