@@ -2,8 +2,8 @@
 
 These are negative + positive tests: they confirm that valid examples pass and
 that every schema constraint actually rejects malformed data. This guards the
-M1-S2 "bug items to track": invalid JSON schema, missing required fields, and
-duplicate/unclear labels.
+core schema guarantees: required fields, enum values, strict object shape, and
+representative sample coverage.
 
 Run with either:
     pytest data/test_validate_dataset.py
@@ -69,7 +69,7 @@ def test_minimal_valid_example_passes():
 
 
 def test_required_sample_types_exist():
-    """M1-S2 requires a benign email and a malicious prompt-injection example."""
+    """Committed samples cover benign email and prompt-injection scenarios."""
     examples = json.loads(SAMPLES_PATH.read_text(encoding="utf-8"))
     benign_email = [
         e for e in examples

@@ -1,5 +1,5 @@
 """
-AgentShield Policy Checker v0.1
+AgentShield policy checker.
 
 Checks proposed tool calls against compiled policy rules and returns
 detailed violation information. This module sits between the Policy
@@ -65,9 +65,8 @@ class PolicyChecker:
     """
     Checks proposed tool calls against the compiled policy ruleset.
 
-    Unlike the Firewall Agent which returns the first matching rule,
-    the Policy Checker evaluates ALL rules and returns every violation.
-    This gives a complete picture for audit purposes.
+    Evaluates every enabled rule that applies to the tool and returns every
+    matching violation. The final decision is the most restrictive match.
     """
 
     def __init__(self, rules_path: str = "data/policy_rules.json"):
@@ -330,7 +329,6 @@ class PolicyChecker:
             )
 
             if matched:
-                # Generate explanation with detail
                 explanation = rule.get("explanation_template", "")
                 arguments = proposed.get("arguments", {})
                 for key, value in arguments.items():

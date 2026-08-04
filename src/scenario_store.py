@@ -1,4 +1,4 @@
-"""Scenario loading helpers for AgentShield demo and API flows."""
+"""Scenario loading helpers for AgentShield dataset and API flows."""
 
 import json
 import os

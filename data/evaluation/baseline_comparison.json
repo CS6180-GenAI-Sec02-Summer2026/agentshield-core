@@ -315,37 +315,37 @@
   "summary": {
     "comparison_table": [
       {
-        "metric": "Attack Success Rate (\u2193)",
+        "metric": "Attack Success Rate (lower)",
         "unprotected": 100.0,
         "prompt_guardrail": 33.33,
         "agentshield": 0.0
       },
       {
-        "metric": "Defense Success Rate (\u2191)",
+        "metric": "Defense Success Rate (higher)",
         "unprotected": 0.0,
         "prompt_guardrail": 66.67,
         "agentshield": 100.0
       },
       {
-        "metric": "Benign Task Success Rate (\u2191)",
+        "metric": "Benign Task Success Rate (higher)",
         "unprotected": 100.0,
         "prompt_guardrail": 100.0,
         "agentshield": 100.0
       },
       {
-        "metric": "False Positive Rate (\u2193)",
+        "metric": "False Positive Rate (lower)",
         "unprotected": 0.0,
         "prompt_guardrail": 0.0,
         "agentshield": 0.0
       },
       {
-        "metric": "False Negative Rate (\u2193)",
+        "metric": "False Negative Rate (lower)",
         "unprotected": 100.0,
         "prompt_guardrail": 33.33,
         "agentshield": 0.0
       },
       {
-        "metric": "Policy Compliance Accuracy (\u2191)",
+        "metric": "Policy Compliance Accuracy (higher)",
         "unprotected": 33.33,
         "prompt_guardrail": 60.0,
         "agentshield": 100.0
@@ -357,19 +357,19 @@
         "agentshield": 26.67
       },
       {
-        "metric": "BLOCK Precision (\u2191)",
+        "metric": "BLOCK Precision (higher)",
         "unprotected": null,
         "prompt_guardrail": 100.0,
         "agentshield": 100.0
       },
       {
-        "metric": "BLOCK Recall (\u2191)",
+        "metric": "BLOCK Recall (higher)",
         "unprotected": 0.0,
         "prompt_guardrail": 66.67,
         "agentshield": 100.0
       },
       {
-        "metric": "BLOCK F1 (\u2191)",
+        "metric": "BLOCK F1 (higher)",
         "unprotected": null,
         "prompt_guardrail": 80.0,
         "agentshield": 100.0

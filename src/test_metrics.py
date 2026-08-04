@@ -1,5 +1,5 @@
 """
-AgentShield Metrics Test Suite v0.1
+AgentShield metrics test suite.
 
 Tests:
     1. Individual metric computations (all 12 metrics)

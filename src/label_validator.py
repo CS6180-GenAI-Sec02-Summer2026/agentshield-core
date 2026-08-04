@@ -1,5 +1,5 @@
 """
-AgentShield Label Validator v0.1
+AgentShield label validator.
 
 Validates dataset examples against structured policy rules.
 Checks whether the expected_decision label in each dataset example
@@ -214,6 +214,8 @@ def evaluate_check(check: dict, example: dict) -> bool:
         return False
 
     return False
+
+
 def evaluate_conditions(conditions: dict, example: dict) -> bool:
     """
     Evaluate a condition block (with AND/OR/ALWAYS operator).
@@ -243,18 +245,15 @@ def evaluate_example(example: dict, rules: list[dict]) -> dict:
     proposed_tool_call = example.get("proposed_tool_call", {})
     tool_name = proposed_tool_call.get("tool_name", "")
 
-    # Sort rules by priority (lower number = higher priority)
     sorted_rules = sorted(rules, key=lambda r: r.get("priority", 99))
 
     for rule in sorted_rules:
         if not rule.get("enabled", True):
             continue
 
-        # Check if rule applies to this tool
         if tool_name not in rule.get("tools", []):
             continue
 
-        # Evaluate conditions
         if evaluate_conditions(rule.get("conditions", {}), example):
             explanation = rule.get("explanation_template", "No explanation available.")
             return {
@@ -265,7 +264,6 @@ def evaluate_example(example: dict, rules: list[dict]) -> dict:
                 "explanation": explanation,
             }
 
-    # No rule matched — default ALLOW
     return {
         "decision": "ALLOW",
         "matched_rule": None,
@@ -540,7 +538,6 @@ def run_tests(rules: list[dict]):
     results = validate_dataset(TEST_CASES, rules)
     print_validation_report(results)
 
-    # Print individual test details
     for detail in results["details"]:
         test_case = next(t for t in TEST_CASES if t["id"] == detail["example_id"])
         status = "PASS" if detail["match"] else "FAIL"
@@ -560,7 +557,6 @@ def main():
 
     args = parser.parse_args()
 
-    # Load rules
     rules_data = load_json(args.rules)
     rules = rules_data.get("rules", [])
     print(f"Loaded {len(rules)} policy rules from {args.rules}")
@@ -573,7 +569,6 @@ def main():
         print("Error: Provide --dataset path or use --test for built-in tests.")
         sys.exit(1)
 
-    # Load and validate dataset
     dataset = load_json(args.dataset)
     if isinstance(dataset, dict):
         dataset = dataset.get("examples", [])
@@ -583,7 +578,6 @@ def main():
     results = validate_dataset(dataset, rules)
     print_validation_report(results)
 
-    # Save results if output path provided
     if args.output:
         with open(args.output, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)

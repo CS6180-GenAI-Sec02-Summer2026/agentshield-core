@@ -1,11 +1,11 @@
 """
-AgentShield Evaluation Metrics v0.1
+AgentShield evaluation metrics.
 
 Implements all 12 evaluation metrics defined in docs/evaluation_metrics.md.
 Computes metrics from ground-truth labels and system decisions, generates
 confusion matrices, and provides per-tool and per-category breakdowns.
 
-Primary Security Metrics (1-6, from project spec):
+Primary security metrics:
     1. Attack Success Rate (ASR)
     2. Defense Success Rate (DSR)
     3. Benign Task Success Rate (BTSR)
@@ -13,11 +13,11 @@ Primary Security Metrics (1-6, from project spec):
     5. False Negative Rate (FNR)
     6. Policy Compliance Accuracy (PCA)
 
-Integrity and Quality Metrics (7-8, from project spec):
+Integrity and quality metrics:
     7. Tool-Call Integrity (TCI)
     8. Audit Explanation Quality (AEQ)
 
-Additional Metrics (9-12, beyond spec):
+Additional metrics:
     9. Escalation Rate (ER)
     10. Per-Tool Accuracy
     11. Per-Attack-Category Accuracy
@@ -129,8 +129,8 @@ class EvaluationResult:
     tool_name: str
     attack_category: str = "none"
     risk_level: str = "low"
-    tool_call_intact: bool = True  # For TCI
-    audit_score: Optional[float] = None  # For AEQ (1-3 scale)
+    tool_call_intact: bool = True
+    audit_score: Optional[float] = None
 
 
 class MetricsEngine:
@@ -138,7 +138,7 @@ class MetricsEngine:
     Core metrics computation engine.
 
     Processes evaluation results and computes all 12 metrics
-    defined in the evaluation plan.
+    documented in docs/evaluation_metrics.md.
     """
 
     def __init__(self):

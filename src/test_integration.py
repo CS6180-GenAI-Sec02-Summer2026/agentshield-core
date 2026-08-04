@@ -1,7 +1,7 @@
 """
-AgentShield Integration Test Suite v0.1
+AgentShield integration test suite.
 
-Tests the full M4 pipeline:
+Tests the full policy/firewall pipeline:
     Policy Compiler -> Policy Checker -> Firewall Agent -> Audit Output
 
 Verifies:

@@ -1,38 +1,50 @@
 # AgentShield Backend Architecture
 
-## Ownership Scope
+## Backend Scope
 
-Mrinal's backend slice owns the glue layer between scenario input, Target Agent
-tool-call proposal, firewall review, mock tool execution, audit capture, metrics,
-and API responses.
+The backend owns the full local decision workflow: scenario ingestion, target
+tool-call proposal, schema validation, policy and risk evaluation, safe mock
+execution, audit capture, metrics, baseline comparison, and API responses.
 
 ## Module Map
 
 | Module | Responsibility |
-|---|---|
-| `src/tools.py` | Supported tool registry, required argument validation, safe mock execution, input/output log. |
-| `src/target_agent.py` | Deterministic Target Agent and structured tool-call proposal format. |
-| `src/scenario_store.py` | Loads demo/sample/future corpus scenario files from `data/`. |
-| `src/orchestrator.py` | End-to-end workflow: scenario -> Target Agent -> Firewall -> mock tool result -> audit/metrics. |
-| `src/api.py` | FastAPI app, CORS, frontend endpoints, request validation. |
-| `src/experiment_runner.py` | Repeatable scenario run plus baseline comparison export. |
-| `src/schemas.py` | Shared Pydantic request/response/workflow schemas. |
+| --- | --- |
+| `src/tools.py` | Supported tool registry, argument validation, safe mock execution, and input/output log. |
+| `src/intent_utils.py` | Shared user-intent helpers used by policy, risk, and label checks. |
+| `src/target_agent.py` | Deterministic target-agent simulator and structured tool-call proposal format. |
+| `src/scenario_store.py` | Loads available scenario datasets from `data/` and attaches stable source metadata. |
+| `src/policy_compiler_agent.py` | Parses Markdown safety policies and exports structured JSON rules. |
+| `src/policy_checker.py` | Evaluates enabled policy rules and returns every matching violation. |
+| `src/risk_classifier.py` | Classifies risk level, risk score, and risk categories for proposed tool calls. |
+| `src/firewall_agent.py` | Combines policy and risk results into `ALLOW`, `BLOCK`, or `ASK_APPROVAL` decisions. |
+| `src/orchestrator.py` | Runs the end-to-end scenario workflow and stores audit entries. |
+| `src/api.py` | FastAPI app, CORS, endpoints, and request validation. |
+| `src/schemas.py` | Shared Pydantic request, response, and workflow models. |
+| `src/metrics.py` | Security, usability, accuracy, escalation, and breakdown metrics. |
+| `src/baseline_analyzer.py` | Unprotected and prompt-only baseline comparison engine. |
+| `src/baseline_unprotected.py` | Script wrapper for the unprotected baseline export. |
+| `src/baseline_prompt_guardrail.py` | Script wrapper for the prompt-only guardrail baseline export. |
+| `src/experiment_runner.py` | Repeatable AgentShield run plus baseline export workflow. |
 
 ## Lifecycle
 
 ```mermaid
 flowchart LR
-  A["User request or stored scenario"] --> B["Target Agent proposes tool call"]
+  A["User request or stored scenario"] --> B["Target agent proposes tool call"]
   B --> C["Tool-call schema validation"]
-  C --> D["Firewall policy + risk evaluation"]
-  D --> E{"Decision"}
-  E -->|ALLOW| F["Optional safe mock execution"]
-  E -->|BLOCK| G["No execution"]
-  E -->|ASK_APPROVAL| H["No execution until approval"]
-  F --> I["Audit log + workflow state"]
-  G --> I
-  H --> I
-  I --> J["Metrics / API response / experiment export"]
+  C --> D["Policy checker evaluates enabled rules"]
+  C --> E["Risk classifier scores the proposed call"]
+  D --> F["Firewall chooses most restrictive decision"]
+  E --> F
+  F --> G{"Decision"}
+  G -->|ALLOW| H["Optional safe mock execution"]
+  G -->|BLOCK| I["No execution"]
+  G -->|ASK_APPROVAL| J["No execution until approval"]
+  H --> K["Audit log and workflow state"]
+  I --> K
+  J --> K
+  K --> L["Metrics, API response, or export"]
 ```
 
 ## Workflow State
@@ -56,6 +68,18 @@ Every scenario run returns a compact `workflow_state` object:
 
 ## Safety Boundary
 
-Mock tools never perform real side effects. `ALLOW` only means the firewall would
-permit the call. Real-world execution remains behind explicit approval and
+Mock tools never perform real side effects. `ALLOW` means the firewall permits
+the proposed call in simulation. Real-world execution remains outside this
+backend and should stay behind explicit user approval plus production
 integration controls.
+
+## Validation Surface
+
+The backend is validated by:
+
+- schema tests and dataset validation in `data/test_validate_dataset.py`
+- orchestration and API smoke tests in `src/test_orchestrator.py`
+- firewall behavior tests in `src/test_firewall.py`
+- policy compiler/checker integration tests in `src/test_integration.py`
+- metrics and baseline tests in `src/test_metrics.py`
+- label validation in `src/label_validator.py`

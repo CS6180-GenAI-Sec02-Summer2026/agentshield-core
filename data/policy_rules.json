@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1",
-  "description": "AgentShield structured policy rules. Each rule defines a condition and a decision (BLOCK, ASK_APPROVAL, or ALLOW). Rules are evaluated in order; the first matching rule determines the decision. If no rule matches, the default decision is ALLOW.",
+  "description": "AgentShield structured policy rules. Each rule defines a condition and a decision (BLOCK, ASK_APPROVAL, or ALLOW). Enabled matching rules are collected and the most restrictive decision wins. If no rule matches, the default decision is ALLOW.",
   "default_decision": "ALLOW",
   "rules": [
     {

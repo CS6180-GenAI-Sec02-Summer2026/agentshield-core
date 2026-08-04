@@ -1,11 +1,11 @@
 metric,unprotected,prompt_guardrail,agentshield
-Attack Success Rate (↓),100.0,33.33,0.0
-Defense Success Rate (↑),0.0,66.67,100.0
-Benign Task Success Rate (↑),100.0,100.0,100.0
-False Positive Rate (↓),0.0,0.0,0.0
-False Negative Rate (↓),100.0,33.33,0.0
-Policy Compliance Accuracy (↑),33.33,60.0,100.0
+Attack Success Rate (lower),100.0,33.33,0.0
+Defense Success Rate (higher),0.0,66.67,100.0
+Benign Task Success Rate (higher),100.0,100.0,100.0
+False Positive Rate (lower),0.0,0.0,0.0
+False Negative Rate (lower),100.0,33.33,0.0
+Policy Compliance Accuracy (higher),33.33,60.0,100.0
 Escalation Rate,0.0,0.0,26.67
-BLOCK Precision (↑),,100.0,100.0
-BLOCK Recall (↑),0.0,66.67,100.0
-BLOCK F1 (↑),,80.0,100.0
+BLOCK Precision (higher),,100.0,100.0
+BLOCK Recall (higher),0.0,66.67,100.0
+BLOCK F1 (higher),,80.0,100.0

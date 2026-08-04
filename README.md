@@ -108,7 +108,7 @@ git diff --check
 
 ## Documentation
 
-- `docs/architecture.md` - backend ownership, module map, lifecycle, and safety boundary.
+- `docs/architecture.md` - backend scope, module map, lifecycle, and safety boundary.
 - `docs/api_contract.md` - API payload and response contract.
 - `docs/safety_policies.md` - human-readable safety policies.
 - `docs/policy_rule_format.md` - compiled rule format.

@@ -1,5 +1,5 @@
 """
-AgentShield Risk Classifier v0.1
+AgentShield risk classifier.
 
 Classifies proposed tool calls by risk category and severity level.
 Used by the Firewall Agent to assess threat level before making decisions.
@@ -274,7 +274,6 @@ def classify_risk(example: dict) -> RiskAssessment:
     all_categories = []
     all_factors = []
 
-    # Run all detectors
     injection_detected, injection_factors = detect_prompt_injection(example)
     if injection_detected:
         all_categories.append("prompt_injection")
@@ -295,7 +294,6 @@ def classify_risk(example: dict) -> RiskAssessment:
         all_categories.append("unauthorized_action")
         all_factors.extend(unauth_factors)
 
-    # Determine risk level based on categories and severity
     if not all_categories:
         risk_level = "low"
         risk_score = 0.1
@@ -306,7 +304,7 @@ def classify_risk(example: dict) -> RiskAssessment:
     elif "prompt_injection" in all_categories or "credential_exposure" in all_categories:
         risk_level = "critical"
         risk_score = 0.95
-        requires_approval = False  # Should be blocked, not just approved
+        requires_approval = False
 
     elif "data_exfiltration" in all_categories:
         # Data exfil with external target is critical, otherwise high

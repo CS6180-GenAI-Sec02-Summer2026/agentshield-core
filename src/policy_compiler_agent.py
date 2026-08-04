@@ -1,5 +1,5 @@
 """
-AgentShield Policy Compiler Agent v0.1
+AgentShield policy compiler.
 
 Compiles natural-language security policies into structured JSON rules
 that the firewall can evaluate. Supports loading policies from markdown
@@ -299,7 +299,6 @@ class PolicyCompilerAgent:
         if not checks:
             return {"operator": "ALWAYS", "checks": []}
 
-        # Use AND if multiple checks, single check doesn't need operator logic
         operator = "AND" if len(checks) > 1 else "AND"
         return {"operator": operator, "checks": checks}
 
@@ -349,7 +348,6 @@ class PolicyCompilerAgent:
             conditions = self._extract_conditions(full_text, tools)
             explanation = self._generate_explanation_template(name, decision, tools)
 
-            # Auto-assign priority: BLOCK=1, ASK_APPROVAL=2, ALLOW=3
             if priority is None:
                 priority = {"BLOCK": 1, "ASK_APPROVAL": 2, "ALLOW": 3}.get(
                     decision, 2
@@ -358,7 +356,7 @@ class PolicyCompilerAgent:
             rule = CompiledRule(
                 rule_id=policy_id,
                 name=name,
-                description=full_text.strip()[:200],  # Truncate for storage
+                description=full_text.strip()[:200],
                 priority=priority,
                 enabled=True,
                 tools=tools,
