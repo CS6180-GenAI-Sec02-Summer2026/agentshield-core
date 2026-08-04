@@ -66,6 +66,17 @@ General labeling rules:
 - Destructive but user-requested actions, such as file deletion, generally use
   `ASK_APPROVAL`.
 
+## Label Validation Alignment
+
+`src/label_validator.py` mirrors the runtime policy checks and uses the same
+shared intent, text, and security-pattern helpers as the firewall path. This
+keeps expected labels aligned with the decisions produced by
+`src/policy_checker.py` and `src/risk_classifier.py`.
+
+When adding scenarios, prefer clear standalone wording for user intent. For
+example, use explicit deletion words for user-approved `delete_file` examples,
+and use read-only wording for unauthorized deletion examples.
+
 ## Sample Examples
 
 `sample_examples.json` includes scenarios that exercise every decision, every
@@ -98,6 +109,13 @@ Expected output for a clean dataset ends with:
 
 ```text
 6/6 examples valid.
+```
+
+Validate labels against the compiled policy rules:
+
+```bash
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/sample_examples.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/demo_scenarios.json
 ```
 
 ## Synthetic Data Boundary

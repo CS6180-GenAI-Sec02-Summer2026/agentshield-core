@@ -15,6 +15,8 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 - Dataset schema, attack taxonomy, sample scenarios, and dataset validators.
 - Markdown safety policies compiled into structured JSON rules.
 - Firewall, policy checker, risk classifier, and label validator.
+- Shared helper modules for intent matching, security patterns, text matching,
+  and external-target classification.
 - Deterministic target-agent proposal flow for repeatable local testing.
 - Safe mock tool registry covering email, files, calendar, tasks, issues, and HTTP.
 - End-to-end orchestrator with workflow state, audit entries, metrics, and exports.
@@ -30,9 +32,14 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 | `src/firewall_agent.py` | Firewall decision layer. |
 | `src/policy_checker.py` | Structured policy-rule evaluation. |
 | `src/risk_classifier.py` | Risk-level and attack-category classification. |
+| `src/intent_utils.py` | Shared user-intent matching helpers. |
+| `src/security_patterns.py` | Shared security pattern constants. |
+| `src/security_text.py` | Shared text matching and external-target helpers. |
 | `src/tools.py` | Supported tool schemas and safe mock execution. |
 | `src/target_agent.py` | Deterministic target-agent tool-call proposals. |
 | `src/metrics.py` | Security, usability, and accuracy metrics. |
+| `src/policy_compiler_agent.py` | Markdown policy compiler for structured rule exports. |
+| `src/label_validator.py` | Dataset label consistency checker. |
 | `data/` | Synthetic scenarios, schema, policy rules, audit logs, and exports. |
 | `docs/` | Architecture, API contract, policies, rule format, and metrics docs. |
 
@@ -92,6 +99,7 @@ Generated evaluation artifacts are written under `data/evaluation/`.
 Run the complete local backend check set before merging:
 
 ```bash
+PYTHONPATH=. python3 -m py_compile src/*.py data/*.py
 PYTHONPATH=. python3 -m pytest -q
 PYTHONPATH=. python3 data/test_validate_dataset.py
 PYTHONPATH=. python3 src/test_orchestrator.py

@@ -78,6 +78,24 @@ Each check has a `field`, a `check` type, and optional `value` or `patterns`.
 | `count_greater_than` | Checks whether a list field exceeds a threshold. | `POLICY-008` |
 | `greater_than` | Numeric comparison on a field value. | `POLICY-008` |
 
+## Shared Matching Behavior
+
+`src/policy_checker.py`, `src/risk_classifier.py`, and
+`src/label_validator.py` share pattern constants and text helpers from
+`src/security_patterns.py` and `src/security_text.py`. A pattern change in those
+shared modules affects runtime decisions, risk scoring, and label validation
+consistently.
+
+`contradicts_user_intent` delegates to `src/intent_utils.py`. Intent keywords
+are matched as standalone terms with flexible whitespace for multi-word phrases.
+This avoids accidental matches inside unrelated words, such as matching `get`
+inside another word. `delete_file` has additional handling so read-only requests
+only permit deletion when the request also explicitly asks to delete or remove.
+
+External-recipient and external-target checks use the default internal email
+domains `@company.com` and `@internal.org`, plus any internal domains supplied
+by a programmatic scenario payload.
+
 ## Field Paths
 
 Fields use dot notation to access nested values:
@@ -110,12 +128,14 @@ audit and explanation generation rather than stopping at the first match.
 2. Specify the tool or tools the rule applies to.
 3. Define conditions using existing check types, or add a new check type to
    `src/policy_checker.py` and `src/label_validator.py`.
-4. Set `decision`, `risk_level`, `attack_categories`, and
+4. Add shared patterns or text helpers when the behavior must stay aligned
+   across policy checks, risk classification, and label validation.
+5. Set `decision`, `risk_level`, `attack_categories`, and
    `explanation_template`.
-5. Add the rule to `data/policy_rules.json`.
-6. Add focused coverage in `src/label_validator.py`, `src/test_firewall.py`, or
+6. Add the rule to `data/policy_rules.json`.
+7. Add focused coverage in `src/label_validator.py`, `src/test_firewall.py`, or
    `src/test_integration.py`.
-7. Run validation.
+8. Run validation.
 
 ```bash
 PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --test

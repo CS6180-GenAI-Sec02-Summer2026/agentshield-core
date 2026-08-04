@@ -27,6 +27,10 @@ Describe the outcome this story delivers and why it matters.
 - [ ] Task issue link 1
 - [ ] Task issue link 2
 
+## Validation Plan
+
+List the tests, demo flow, docs, or review checks needed to close this story.
+
 ## Notes
 
 Add dependencies, blockers, or context.

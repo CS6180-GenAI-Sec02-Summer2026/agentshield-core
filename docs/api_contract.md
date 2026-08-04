@@ -63,6 +63,22 @@ The request can also pass a complete `scenario` object instead of top-level
 ad-hoc fields. `execute_allowed_tool` controls whether `ALLOW` decisions run
 through the safe mock tool implementation.
 
+If `proposed_tool_call` is omitted, the deterministic target-agent simulator
+infers a simple proposal from `user_request`. Provided tool calls are validated
+against the supported tool schema before policy and risk evaluation.
+
+## Decision And Execution Behavior
+
+- `ALLOW` means policy and risk checks did not find a blocking or approval
+  condition.
+- `BLOCK` means at least one matching rule or critical risk condition forbids
+  the call.
+- `ASK_APPROVAL` means the call may be legitimate but is high-impact,
+  destructive, bulk, or otherwise requires explicit approval.
+- Mock execution only happens for `ALLOW` decisions when
+  `execute_allowed_tool` is true.
+- `BLOCK` and `ASK_APPROVAL` decisions do not execute tools.
+
 ## Run Scenario Response
 
 ```json

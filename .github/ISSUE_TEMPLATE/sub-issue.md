@@ -18,3 +18,7 @@ Describe the specific sub-item to complete.
 ## Done When
 
 State the one-line completion condition.
+
+## Validation
+
+State the check that proves this sub-item is complete.

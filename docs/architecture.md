@@ -17,6 +17,8 @@ execution, audit capture, metrics, baseline comparison, and API responses.
 | `src/policy_compiler_agent.py` | Parses Markdown safety policies and exports structured JSON rules. |
 | `src/policy_checker.py` | Evaluates enabled policy rules and returns every matching violation. |
 | `src/risk_classifier.py` | Classifies risk level, risk score, and risk categories for proposed tool calls. |
+| `src/security_patterns.py` | Centralized security pattern constants shared by policy, risk, compiler, and label checks. |
+| `src/security_text.py` | Text flattening, pattern matching, recipient, and external-target helpers. |
 | `src/firewall_agent.py` | Combines policy and risk results into `ALLOW`, `BLOCK`, or `ASK_APPROVAL` decisions. |
 | `src/orchestrator.py` | Runs the end-to-end scenario workflow and stores audit entries. |
 | `src/api.py` | FastAPI app, CORS, endpoints, and request validation. |
@@ -72,6 +74,23 @@ Mock tools never perform real side effects. `ALLOW` means the firewall permits
 the proposed call in simulation. Real-world execution remains outside this
 backend and should stay behind explicit user approval plus production
 integration controls.
+
+## Policy And Risk Evaluation
+
+Policy checking, risk classification, and label validation use the same helper
+modules for security patterns, nested text matching, external recipient
+detection, and user-intent matching. This keeps dataset labels, runtime
+decisions, and evaluation reports aligned.
+
+User-intent checks use standalone keyword patterns, so short terms such as
+`get` or `list` do not match inside unrelated words. `delete_file` has an
+explicit deletion gate: read-only requests such as listing, showing, viewing,
+displaying, or asking what is in a folder only authorize deletion when the
+request also contains a deletion or removal term.
+
+External-target checks treat known internal hosts, localhost addresses, and
+configured internal email domains as internal. Targets outside those indicators
+are considered external for policy and risk evaluation.
 
 ## Validation Surface
 

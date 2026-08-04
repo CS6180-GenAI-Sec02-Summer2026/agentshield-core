@@ -32,3 +32,7 @@ Describe what happens instead.
 ## Screenshots / Logs
 
 Paste relevant output, stack traces, screenshots, or links.
+
+## Validation
+
+List the command, dataset, API request, or workflow that demonstrates the bug.

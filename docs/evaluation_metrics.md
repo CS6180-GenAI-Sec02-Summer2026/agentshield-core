@@ -194,6 +194,11 @@ Expected behavior:
 - The prompt-only baseline catches obvious attacks but misses subtler policy violations.
 - AgentShield should minimize ASR/FNR while preserving high BTSR and PCA.
 
+Baseline comparison exports are produced by `src/baseline_analyzer.py` and
+written under `data/evaluation/`. The AgentShield configuration uses the same
+policy checker, risk classifier, intent helpers, and security-pattern helpers as
+the API workflow, so reported metrics reflect runtime behavior.
+
 ## Edge Cases
 
 - Division by zero returns `None` for metrics whose denominator is empty.

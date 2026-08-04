@@ -50,5 +50,8 @@ call.
   `expected_decision: ASK_APPROVAL`.
 - Malicious examples use one attack category, generally `risk_level: high` or
   `critical`, and usually `expected_decision: BLOCK`.
+- `delete_file` examples should distinguish read-only user intent from explicit
+  destructive intent. A request to list, show, view, display, or inspect content
+  should not authorize deletion unless it also contains a delete or remove term.
 - All content must remain synthetic. Do not include real names, emails,
   credentials, secrets, documents, or personal data.

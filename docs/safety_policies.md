@@ -4,6 +4,11 @@ These policies define the security rules enforced when AgentShield evaluates
 proposed tool calls. Each policy specifies the condition and expected decision:
 `ALLOW`, `BLOCK`, or `ASK_APPROVAL`.
 
+The implementation keeps policy checks, risk classification, and label
+validation aligned through shared security pattern and text helper modules.
+User-intent checks use standalone keyword matching so destructive actions are
+not authorized by accidental substring matches in unrelated words.
+
 ## Policy 1: Private File to External Recipient
 
 **Rule:** Block any tool call that sends private or internal file contents to an external email address or external recipient.
@@ -122,7 +127,7 @@ proposed tool calls. Each policy specifies the condition and expected decision:
 
 **Applies to:** `delete_file`
 
-**Condition:** The proposed `delete_file` call contradicts the user's original request.
+**Condition:** The proposed `delete_file` call contradicts the user's original request. Read-only wording such as listing, showing, viewing, displaying, or asking what is in a folder does not authorize deletion unless the request also explicitly asks to delete or remove.
 
 **Decision:** BLOCK
 
@@ -143,3 +148,12 @@ proposed tool calls. Each policy specifies the condition and expected decision:
 | 7 | Internal info in public GitHub issues | `create_github_issue` | ASK_APPROVAL |
 | 8 | Bulk or destructive operations | `write_file`, `delete_file`, `send_email` | ASK_APPROVAL |
 | 9 | Unauthorized file deletion | `delete_file` | BLOCK |
+
+## Implementation Notes
+
+- Secret, injection, sensitive-content, internal-reference, and file-content
+  indicators are centralized in `src/security_patterns.py`.
+- Nested argument matching, external recipient checks, and URL or email target
+  classification are centralized in `src/security_text.py`.
+- Tool-intent matching is centralized in `src/intent_utils.py`, including the
+  stricter delete-file authorization gate.
