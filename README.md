@@ -41,13 +41,23 @@ Run and export a repeatable experiment:
 
 ```bash
 PYTHONPATH=. python3 src/experiment_runner.py
+PYTHONPATH=. python3 src/baseline_unprotected.py
+PYTHONPATH=. python3 src/baseline_prompt_guardrail.py
 ```
 
 Run the complete local backend checks:
 
 ```bash
+PYTHONPATH=. python3 -m pytest -q
+PYTHONPATH=. python3 data/test_validate_dataset.py
 PYTHONPATH=. python3 src/test_orchestrator.py
 PYTHONPATH=. python3 src/test_firewall.py
 PYTHONPATH=. python3 src/test_integration.py
 PYTHONPATH=. python3 src/test_metrics.py
+PYTHONPATH=. python3 data/validate_dataset.py data/sample_examples.json
+PYTHONPATH=. python3 data/validate_dataset.py data/demo_scenarios.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --test
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/sample_examples.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/demo_scenarios.json
+git diff --check
 ```

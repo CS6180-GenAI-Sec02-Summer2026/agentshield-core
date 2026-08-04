@@ -1,6 +1,8 @@
 """Focused tests for Mrinal-owned orchestration/API integration layer."""
 
-from src.api import ScenarioRunRequest, _scenario_from_request
+from src.api import ScenarioRunRequest, _scenario_from_request, create_app
+from src.baseline_prompt_guardrail import run_prompt_guardrail_baseline
+from src.baseline_unprotected import run_unprotected_baseline
 from src.experiment_runner import ExperimentRunner
 from src.orchestrator import AgentShieldOrchestrator, run_ad_hoc
 from src.scenario_store import available_datasets, load_scenarios
@@ -150,10 +152,52 @@ def test_api_request_conversion():
     assert scenario["proposed_tool_call"]["tool_name"] == "read_file"
 
 
+def test_api_endpoints_smoke():
+    app = create_app()
+
+    health = _route_endpoint(app, "GET", "/health")()
+    assert health["status"] == "ok"
+
+    run_scenario = _route_endpoint(app, "POST", "/run-scenario")
+    payload = run_scenario(ScenarioRunRequest(
+        user_request="Read notes.txt",
+        proposed_tool_call={
+            "tool_name": "read_file",
+            "arguments": {"file_path": "notes.txt"},
+        },
+    ))
+    assert payload["workflow_state"]["status"] == "completed"
+    assert payload["proposed_tool_call"]["tool_name"] == "read_file"
+
+    try:
+        run_scenario(ScenarioRunRequest())
+    except Exception as exc:
+        assert getattr(exc, "status_code", None) == 400
+    else:
+        raise AssertionError("Malformed run-scenario request should return HTTP 400")
+
+
 def test_experiment_runner_smoke():
     result = ExperimentRunner().run(["demo"])
     assert result.scenario_count == 3
     assert "baseline_comparison" in result.to_dict()
+
+
+def test_named_baseline_runners_smoke():
+    unprotected = run_unprotected_baseline(["demo"])
+    guardrail = run_prompt_guardrail_baseline(["demo"])
+    assert unprotected["baseline"] == "unprotected"
+    assert guardrail["baseline"] == "prompt_guardrail"
+    assert unprotected["total"] == guardrail["total"] == 3
+    assert all(result["actual_decision"] == "ALLOW" for result in unprotected["results"])
+    assert "policy_compliance_accuracy" in guardrail["metrics"]
+
+
+def _route_endpoint(app, method: str, path: str):
+    for route in app.routes:
+        if route.path == path and method in route.methods:
+            return route.endpoint
+    raise AssertionError(f"Route {method} {path} was not registered")
 
 
 def main():
@@ -169,7 +213,9 @@ def main():
         test_allowed_mock_execution_logs_input_output,
         test_mock_tool_execution_log_is_capped,
         test_api_request_conversion,
+        test_api_endpoints_smoke,
         test_experiment_runner_smoke,
+        test_named_baseline_runners_smoke,
     ]
     passed = 0
     for test in tests:

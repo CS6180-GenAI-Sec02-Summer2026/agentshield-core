@@ -499,7 +499,7 @@ class PolicyCompilerAgent:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2)
 
         print(f"Exported {len(self.compiled_rules)} compiled rules to {filepath}")

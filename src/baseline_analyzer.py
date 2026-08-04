@@ -32,7 +32,9 @@ from src.firewall_agent import FirewallAgent
 
 BASIC_SAFETY_KEYWORDS = [
     "ignore previous instructions",
+    "ignore your previous instructions",
     "ignore above instructions",
+    "ignore all instructions",
     "disregard your instructions",
     "override your instructions",
     "forget your rules",
@@ -160,7 +162,7 @@ def _flatten(obj) -> str:
     if isinstance(obj, str):
         return obj
     elif isinstance(obj, dict):
-        return " ".join(_flatten(v) for v in obj.values())
+        return " ".join(f"{key} {_flatten(value)}" for key, value in obj.items())
     elif isinstance(obj, list):
         return " ".join(_flatten(v) for v in obj)
     return str(obj)
@@ -338,7 +340,7 @@ class BaselineAnalyzer:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(self.comparison.to_dict(), f, indent=2)
         print(f"Baseline comparison exported to {filepath}")
 

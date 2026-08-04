@@ -585,7 +585,7 @@ def main():
 
     # Save results if output path provided
     if args.output:
-        with open(args.output, "w") as f:
+        with open(args.output, "w", encoding="utf-8") as f:
             json.dump(results, f, indent=2)
         print(f"Results saved to {args.output}")
 
