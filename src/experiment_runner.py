@@ -64,6 +64,7 @@ class ExperimentRunner:
         with path.open("w", newline="", encoding="utf-8") as handle:
             writer = csv.DictWriter(
                 handle,
+                lineterminator="\n",
                 fieldnames=[
                     "scenario_count",
                     "decisions",

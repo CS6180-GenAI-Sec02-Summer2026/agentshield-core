@@ -8,23 +8,31 @@ assignees: ''
 
 ## Bug
 
-**Severity:** <!-- low / medium / high / critical -->
-**Found in:** <!-- milestone, component, or file -->
+**Severity:**
+**Found in:**
 
 ## Description
-<!-- What is the bug? -->
 
-## Steps to Reproduce
+Describe the defect, mismatch, failed test, or broken integration.
 
-1. <!-- Step 1 -->
-2. <!-- Step 2 -->
-3. <!-- Step 3 -->
+## Steps To Reproduce
+
+1. Step 1
+2. Step 2
+3. Step 3
 
 ## Expected Behavior
-<!-- What should happen? -->
+
+Describe what should happen.
 
 ## Actual Behavior
-<!-- What happens instead? -->
+
+Describe what happens instead.
 
 ## Screenshots / Logs
-<!-- Paste any relevant output or screenshots -->
+
+Paste relevant output, stack traces, screenshots, or links.
+
+## Validation
+
+List the command, dataset, API request, or workflow that demonstrates the bug.

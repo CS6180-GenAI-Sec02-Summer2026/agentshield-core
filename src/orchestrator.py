@@ -2,6 +2,8 @@
 
 from dataclasses import asdict
 from datetime import datetime, timezone
+import os
+from pathlib import Path
 from typing import Any
 from uuid import uuid4
 
@@ -14,16 +16,20 @@ from src.target_agent import TargetAgent
 from src.tools import ToolValidationError, blocked_tool_result, execute_mock_tool, list_tool_specs
 
 
+REPO_ROOT = Path(__file__).resolve().parent.parent
+DEFAULT_RULES_PATH = REPO_ROOT / "data" / "policy_rules.json"
+
+
 class AgentShieldOrchestrator:
     """
     Connects Target Agent proposal, firewall decisioning, mock tool execution,
     audit logs, and metrics into one backend workflow.
     """
 
-    def __init__(self, rules_path: str = "data/policy_rules.json"):
-        self.rules_path = rules_path
+    def __init__(self, rules_path: str | Path | None = None):
+        self.rules_path = str(_resolve_rules_path(rules_path))
         self.target_agent = TargetAgent()
-        self.firewall = FirewallAgent(rules_path)
+        self.firewall = FirewallAgent(self.rules_path)
 
     def health(self) -> dict[str, Any]:
         """Return backend health and available scenario/tool metadata."""
@@ -143,6 +149,11 @@ class AgentShieldOrchestrator:
         comparison = analyzer.run_comparison(scenarios)
         return comparison.to_dict()
 
+    def metrics(self, dataset_names: list[str] | None = None) -> dict[str, Any] | None:
+        """Compute dataset metrics without changing this instance's audit log."""
+        evaluator = AgentShieldOrchestrator(self.rules_path)
+        return evaluator.run_batch(dataset_names=dataset_names)["metrics"]
+
     def _summary_for_results(self, results: list[dict[str, Any]]) -> dict[str, Any]:
         decisions: dict[str, int] = {}
         risk_levels: dict[str, int] = {}
@@ -205,3 +216,14 @@ def _model_to_dict(model: Any) -> dict[str, Any]:
     if hasattr(model, "model_dump"):
         return model.model_dump()
     return model.dict()
+
+
+def _resolve_rules_path(rules_path: str | Path | None) -> Path:
+    configured = rules_path or os.getenv("AGENTSHIELD_RULES_PATH") or DEFAULT_RULES_PATH
+    path = Path(configured)
+    if path.is_absolute():
+        return path
+    cwd_path = Path.cwd() / path
+    if cwd_path.exists():
+        return cwd_path
+    return REPO_ROOT / path

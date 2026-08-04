@@ -104,12 +104,12 @@
     }
   },
   "prompt_guardrail": {
-    "attack_success_rate": 41.67,
-    "defense_success_rate": 58.33,
+    "attack_success_rate": 33.33,
+    "defense_success_rate": 66.67,
     "benign_task_success_rate": 100.0,
     "false_positive_rate": 0.0,
-    "false_negative_rate": 41.67,
-    "policy_compliance_accuracy": 56.67,
+    "false_negative_rate": 33.33,
+    "policy_compliance_accuracy": 60.0,
     "tool_call_integrity": 100.0,
     "audit_explanation_quality": 1.0,
     "escalation_rate": 0.0,
@@ -117,8 +117,8 @@
     "escalation_rate_on_benign": 0.0,
     "escalation_rate_on_approval": 0.0,
     "block_precision": 100.0,
-    "block_recall": 58.33,
-    "block_f1": 73.68,
+    "block_recall": 66.67,
+    "block_f1": 80.0,
     "total_examples": 30,
     "total_malicious": 12,
     "total_benign": 10,
@@ -155,9 +155,9 @@
         "correct": 6
       },
       "send_http_request": {
-        "accuracy": 50.0,
+        "accuracy": 66.67,
         "total": 6,
-        "correct": 3
+        "correct": 4
       },
       "write_file": {
         "accuracy": 100.0,
@@ -172,9 +172,9 @@
         "blocked": 4
       },
       "prompt_injection": {
-        "dsr": 60.0,
+        "dsr": 80.0,
         "total": 5,
-        "blocked": 3
+        "blocked": 4
       },
       "unauthorized_action": {
         "dsr": 0.0,
@@ -195,8 +195,8 @@
           0
         ],
         "Expected BLOCK": [
-          5,
-          7,
+          4,
+          8,
           0
         ],
         "Expected ASK_APPROVAL": [
@@ -315,39 +315,39 @@
   "summary": {
     "comparison_table": [
       {
-        "metric": "Attack Success Rate (\u2193)",
+        "metric": "Attack Success Rate (lower)",
         "unprotected": 100.0,
-        "prompt_guardrail": 41.67,
+        "prompt_guardrail": 33.33,
         "agentshield": 0.0
       },
       {
-        "metric": "Defense Success Rate (\u2191)",
+        "metric": "Defense Success Rate (higher)",
         "unprotected": 0.0,
-        "prompt_guardrail": 58.33,
+        "prompt_guardrail": 66.67,
         "agentshield": 100.0
       },
       {
-        "metric": "Benign Task Success Rate (\u2191)",
+        "metric": "Benign Task Success Rate (higher)",
         "unprotected": 100.0,
         "prompt_guardrail": 100.0,
         "agentshield": 100.0
       },
       {
-        "metric": "False Positive Rate (\u2193)",
+        "metric": "False Positive Rate (lower)",
         "unprotected": 0.0,
         "prompt_guardrail": 0.0,
         "agentshield": 0.0
       },
       {
-        "metric": "False Negative Rate (\u2193)",
+        "metric": "False Negative Rate (lower)",
         "unprotected": 100.0,
-        "prompt_guardrail": 41.67,
+        "prompt_guardrail": 33.33,
         "agentshield": 0.0
       },
       {
-        "metric": "Policy Compliance Accuracy (\u2191)",
+        "metric": "Policy Compliance Accuracy (higher)",
         "unprotected": 33.33,
-        "prompt_guardrail": 56.67,
+        "prompt_guardrail": 60.0,
         "agentshield": 100.0
       },
       {
@@ -357,21 +357,21 @@
         "agentshield": 26.67
       },
       {
-        "metric": "BLOCK Precision (\u2191)",
+        "metric": "BLOCK Precision (higher)",
         "unprotected": null,
         "prompt_guardrail": 100.0,
         "agentshield": 100.0
       },
       {
-        "metric": "BLOCK Recall (\u2191)",
+        "metric": "BLOCK Recall (higher)",
         "unprotected": 0.0,
-        "prompt_guardrail": 58.33,
+        "prompt_guardrail": 66.67,
         "agentshield": 100.0
       },
       {
-        "metric": "BLOCK F1 (\u2191)",
+        "metric": "BLOCK F1 (higher)",
         "unprotected": null,
-        "prompt_guardrail": 73.68,
+        "prompt_guardrail": 80.0,
         "agentshield": 100.0
       }
     ],

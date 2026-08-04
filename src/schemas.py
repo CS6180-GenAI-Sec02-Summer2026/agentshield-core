@@ -81,6 +81,8 @@ class ScenarioRunResponse(BaseModel):
     request_id: str
     source_dataset: str | None
     user_request: str
+    attack_category: AttackCategory | None
+    expected_risk_level: RiskLevel | None
     external_context_present: bool
     workflow_state: WorkflowStateModel
     target_agent: dict[str, Any]

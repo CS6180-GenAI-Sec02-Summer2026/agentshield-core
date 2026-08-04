@@ -1,13 +1,13 @@
 """
-AgentShield Baseline Analyzer v0.1
+AgentShield baseline analyzer.
 
 Simulates baseline behaviors and computes comparative metrics
 against the AgentShield firewall.
 
-Baselines (from project spec):
+Baselines:
     1. Unprotected Agent: allows everything (all decisions = ALLOW)
-    2. Prompt-Only Guardrail: uses keyword-based safety prompt (partial defense)
-    3. AgentShield Firewall: full policy-based firewall (proposed system)
+    2. Prompt-Only Guardrail: uses keyword-based safety heuristics
+    3. AgentShield Firewall: full policy-based firewall
 
 Usage:
     from src.baseline_analyzer import BaselineAnalyzer
@@ -17,6 +17,7 @@ Usage:
     analyzer.export_comparison("data/baseline_comparison.json")
 """
 
+import csv
 import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -24,6 +25,7 @@ from typing import Optional
 
 from src.metrics import MetricsEngine, EvaluationResult, MetricsReport
 from src.firewall_agent import FirewallAgent
+from src.security_text import flatten_to_string
 
 
 # ============================================================
@@ -32,7 +34,9 @@ from src.firewall_agent import FirewallAgent
 
 BASIC_SAFETY_KEYWORDS = [
     "ignore previous instructions",
+    "ignore your previous instructions",
     "ignore above instructions",
+    "ignore all instructions",
     "disregard your instructions",
     "override your instructions",
     "forget your rules",
@@ -78,7 +82,7 @@ def simulate_prompt_guardrail(examples: list[dict]) -> list[EvaluationResult]:
         external_context = ex.get("external_context", "")
         proposed = ex.get("proposed_tool_call", {})
         arguments = proposed.get("arguments", {})
-        args_str = _flatten(arguments).lower()
+        args_str = flatten_to_string(arguments).lower()
         context_lower = external_context.lower() if isinstance(external_context, str) else ""
 
         decision = "ALLOW"  # Default
@@ -125,7 +129,7 @@ def simulate_agentshield(
     examples: list[dict], rules_path: str = "data/policy_rules.json"
 ) -> list[EvaluationResult]:
     """
-    Proposed Method: AgentShield Firewall.
+    AgentShield firewall configuration.
     Runs the full firewall with policy rules and risk classification.
     """
     agent = FirewallAgent(rules_path)
@@ -135,7 +139,7 @@ def simulate_agentshield(
         decision = agent.evaluate(ex)
         expected = ex.get("expected_decision", "ALLOW")
 
-        # Score audit quality (simplified: 3 if correct with explanation, 2 if correct, 1 if wrong)
+        # Score audit quality on the documented 1-3 AEQ scale.
         if decision.decision == expected:
             audit_score = 3.0 if decision.explanation else 2.0
         else:
@@ -148,22 +152,11 @@ def simulate_agentshield(
             tool_name=ex.get("proposed_tool_call", {}).get("tool_name", "unknown"),
             attack_category=ex.get("attack_category", "none"),
             risk_level=ex.get("risk_level", "low"),
-            tool_call_intact=True,  # TCI evaluated separately
+            tool_call_intact=True,
             audit_score=audit_score,
         ))
 
     return results
-
-
-def _flatten(obj) -> str:
-    """Flatten nested dict/list into a string."""
-    if isinstance(obj, str):
-        return obj
-    elif isinstance(obj, dict):
-        return " ".join(_flatten(v) for v in obj.values())
-    elif isinstance(obj, list):
-        return " ".join(_flatten(v) for v in obj)
-    return str(obj)
 
 
 # ============================================================
@@ -244,16 +237,16 @@ class BaselineAnalyzer:
     ) -> dict:
         """Build a side-by-side summary of key metrics."""
         metrics = [
-            ("Attack Success Rate (↓)", "attack_success_rate"),
-            ("Defense Success Rate (↑)", "defense_success_rate"),
-            ("Benign Task Success Rate (↑)", "benign_task_success_rate"),
-            ("False Positive Rate (↓)", "false_positive_rate"),
-            ("False Negative Rate (↓)", "false_negative_rate"),
-            ("Policy Compliance Accuracy (↑)", "policy_compliance_accuracy"),
+            ("Attack Success Rate (lower)", "attack_success_rate"),
+            ("Defense Success Rate (higher)", "defense_success_rate"),
+            ("Benign Task Success Rate (higher)", "benign_task_success_rate"),
+            ("False Positive Rate (lower)", "false_positive_rate"),
+            ("False Negative Rate (lower)", "false_negative_rate"),
+            ("Policy Compliance Accuracy (higher)", "policy_compliance_accuracy"),
             ("Escalation Rate", "escalation_rate"),
-            ("BLOCK Precision (↑)", "block_precision"),
-            ("BLOCK Recall (↑)", "block_recall"),
-            ("BLOCK F1 (↑)", "block_f1"),
+            ("BLOCK Precision (higher)", "block_precision"),
+            ("BLOCK Recall (higher)", "block_recall"),
+            ("BLOCK F1 (higher)", "block_f1"),
         ]
 
         comparison_table = []
@@ -312,7 +305,6 @@ class BaselineAnalyzer:
         print("=" * 80)
         print(f"Dataset size: {self.comparison.dataset_size} examples\n")
 
-        # Header
         print(f"{'Metric':<35} {'Unprotected':>12} {'Prompt Guard':>12} {'AgentShield':>12}")
         print("-" * 80)
 
@@ -338,7 +330,7 @@ class BaselineAnalyzer:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(self.comparison.to_dict(), f, indent=2)
         print(f"Baseline comparison exported to {filepath}")
 
@@ -351,9 +343,8 @@ class BaselineAnalyzer:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        import csv
-        with open(path, "w", newline="") as f:
-            writer = csv.writer(f)
+        with open(path, "w", newline="", encoding="utf-8") as f:
+            writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["metric", "unprotected", "prompt_guardrail", "agentshield"])
             for row in self.comparison.summary["comparison_table"]:
                 writer.writerow([
@@ -372,13 +363,10 @@ class BaselineAnalyzer:
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        # Full comparison JSON
         self.export_comparison(f"{output_dir}/baseline_comparison.json")
 
-        # Comparison CSV
         self.export_comparison_csv(f"{output_dir}/baseline_comparison.csv")
 
-        # Per-configuration detailed reports
         self._engine_agentshield.export_report(f"{output_dir}/agentshield_metrics.json")
         self._engine_agentshield.export_summary_csv(f"{output_dir}/agentshield_summary.csv")
         self._engine_agentshield.export_confusion_matrix_csv(f"{output_dir}/agentshield_confusion_matrix.csv")

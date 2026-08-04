@@ -6,13 +6,19 @@ labels: sub-issue
 assignees: ''
 ---
 
-## Sub-issue
+## Sub-Issue
 
-**Parent Task:** <!-- Link to parent task issue -->
+**Parent task:**
 **Owner:**
 
 ## Description
-<!-- What specific sub-item needs to be completed? -->
+
+Describe the specific sub-item to complete.
 
 ## Done When
-<!-- One-liner: what does completion look like? -->
+
+State the one-line completion condition.
+
+## Validation
+
+State the check that proves this sub-item is complete.

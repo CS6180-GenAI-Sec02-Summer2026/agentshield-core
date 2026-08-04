@@ -1,16 +1,9 @@
 """
-AgentShield Firewall Agent v0.2
+AgentShield firewall decision engine.
 
-The core decision engine that intercepts proposed tool calls,
-evaluates them against policy rules via the PolicyChecker,
-classifies risk, and returns a structured decision with
-detailed audit explanation.
-
-v0.2 changes:
-    - Integrated PolicyChecker for comprehensive violation detection
-    - Improved audit explanations with detailed risk factors
-    - Added policy violation details to audit entries
-    - Maintained backward compatibility with v0.1 interface
+Intercepts proposed tool calls, evaluates them against compiled policy rules,
+classifies risk, and returns structured decisions with detailed audit
+explanations.
 
 Usage:
     from src.firewall_agent import FirewallAgent
@@ -21,14 +14,13 @@ Usage:
 """
 
 import json
-import sys
 from datetime import datetime, timezone
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
 from src.risk_classifier import classify_risk, RiskAssessment
-from src.policy_checker import PolicyChecker, CheckResult, PolicyViolation
+from src.policy_checker import PolicyChecker, CheckResult
 
 
 @dataclass
@@ -72,11 +64,9 @@ class FirewallDecision:
 
 class FirewallAgent:
     """
-    AgentShield Firewall Agent v0.2.
+    Evaluates proposed tool calls using policy and risk signals.
 
-    Uses PolicyChecker for comprehensive rule evaluation and
-    RiskClassifier for threat assessment. Produces structured
-    decisions with full audit trails.
+    Produces the final firewall decision plus a structured audit trail.
     """
 
     def __init__(self, rules_path: str = "data/policy_rules.json"):
@@ -113,7 +103,6 @@ class FirewallAgent:
                 f"No policy violations detected."
             )
 
-        # Build explanation from violations
         parts = []
 
         if decision == "BLOCK":
@@ -121,7 +110,6 @@ class FirewallAgent:
         elif decision == "ASK_APPROVAL":
             parts.append(f"APPROVAL REQUIRED: '{tool_name}' call triggered {check_result.violations_found} policy rule(s).")
 
-        # Add violation details
         for i, violation in enumerate(check_result.violations):
             parts.append(
                 f"  [{violation.rule_id}] {violation.rule_name}: {violation.explanation}"
@@ -130,7 +118,6 @@ class FirewallAgent:
                 for check_desc in violation.matched_checks:
                     parts.append(f"    - Evidence: {check_desc}")
 
-        # Add risk assessment
         parts.append(
             f"  Risk assessment: {risk.risk_level} (score: {risk.risk_score:.2f}), "
             f"categories: {', '.join(risk.risk_categories)}"
@@ -175,7 +162,7 @@ class FirewallAgent:
         # Step 4: Generate detailed explanation
         explanation = self._generate_explanation(check_result, risk, example)
 
-        # Get the primary (highest priority) violation for the matched_rule fields
+        # Keep the highest-priority violation in the legacy matched_rule fields.
         primary_violation = None
         if check_result.violations:
             primary_violation = check_result.violations[0]
@@ -197,7 +184,6 @@ class FirewallAgent:
             rules_evaluated=check_result.total_rules_evaluated,
         )
 
-        # Build decision
         firewall_decision = FirewallDecision(
             example_id=example_id,
             decision=decision,
@@ -247,7 +233,7 @@ class FirewallAgent:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(log_data, f, indent=2)
         print(f"Audit log exported to {filepath} ({len(self.decision_log)} entries)")
 

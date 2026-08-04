@@ -8,6 +8,8 @@ the firewall as the execution gate.
 
 from dataclasses import dataclass, asdict
 from datetime import datetime, timezone
+import hashlib
+import json
 from typing import Any
 
 
@@ -149,7 +151,7 @@ def execute_mock_tool(tool_call: dict[str, Any]) -> MockToolResult:
         output={
             "mock": True,
             "timestamp": now,
-            "resource_id": f"mock-{tool_name}-{abs(hash(str(arguments))) % 100000}",
+            "resource_id": _stable_resource_id(tool_name, arguments),
         },
     )
     _append_tool_log(result)
@@ -213,3 +215,9 @@ def _append_tool_log(result: MockToolResult) -> None:
     })
     if len(TOOL_EXECUTION_LOG) > MAX_TOOL_EXECUTION_LOG_ENTRIES:
         del TOOL_EXECUTION_LOG[:-MAX_TOOL_EXECUTION_LOG_ENTRIES]
+
+
+def _stable_resource_id(tool_name: str, arguments: dict[str, Any]) -> str:
+    payload = json.dumps(arguments, sort_keys=True, default=str)
+    digest = hashlib.sha256(payload.encode("utf-8")).hexdigest()[:12]
+    return f"mock-{tool_name}-{digest}"

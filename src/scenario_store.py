@@ -1,6 +1,7 @@
-"""Scenario loading helpers for AgentShield demo and API flows."""
+"""Scenario loading helpers for AgentShield dataset and API flows."""
 
 import json
+import os
 from pathlib import Path
 from typing import Any
 
@@ -17,9 +18,9 @@ DATASET_FILES = {
 }
 
 
-def available_datasets(data_dir: Path | str = DEFAULT_DATA_DIR) -> list[dict[str, Any]]:
+def available_datasets(data_dir: Path | str | None = None) -> list[dict[str, Any]]:
     """Return scenario datasets that are present in the current checkout."""
-    root = Path(data_dir)
+    root = _resolve_data_dir(data_dir)
     found = []
     for name, filename in DATASET_FILES.items():
         path = root / filename
@@ -34,20 +35,20 @@ def available_datasets(data_dir: Path | str = DEFAULT_DATA_DIR) -> list[dict[str
     return found
 
 
-def load_dataset(name: str, data_dir: Path | str = DEFAULT_DATA_DIR) -> list[dict[str, Any]]:
+def load_dataset(name: str, data_dir: Path | str | None = None) -> list[dict[str, Any]]:
     """Load one named scenario dataset and attach stable IDs/source metadata."""
     if name not in DATASET_FILES:
         supported = ", ".join(sorted(DATASET_FILES))
         raise ValueError(f"Unknown dataset '{name}'. Supported datasets: {supported}.")
 
-    path = Path(data_dir) / DATASET_FILES[name]
+    path = _resolve_data_dir(data_dir) / DATASET_FILES[name]
     rows = _load_json_list(path)
     return [_with_metadata(row, name, index) for index, row in enumerate(rows, start=1)]
 
 
 def load_scenarios(
     names: list[str] | None = None,
-    data_dir: Path | str = DEFAULT_DATA_DIR,
+    data_dir: Path | str | None = None,
 ) -> list[dict[str, Any]]:
     """Load all requested datasets, or every present dataset when names is omitted."""
     if names is None:
@@ -59,7 +60,7 @@ def load_scenarios(
     return scenarios
 
 
-def get_scenario(scenario_id: str, data_dir: Path | str = DEFAULT_DATA_DIR) -> dict[str, Any]:
+def get_scenario(scenario_id: str, data_dir: Path | str | None = None) -> dict[str, Any]:
     """Find one scenario by generated or explicit ID."""
     for scenario in load_scenarios(data_dir=data_dir):
         if scenario["id"] == scenario_id:
@@ -82,3 +83,14 @@ def _with_metadata(row: dict[str, Any], dataset_name: str, index: int) -> dict[s
     scenario["_source_dataset"] = dataset_name
     scenario["_source_index"] = index
     return scenario
+
+
+def _resolve_data_dir(data_dir: Path | str | None) -> Path:
+    configured = data_dir or os.getenv("AGENTSHIELD_DATA_DIR") or DEFAULT_DATA_DIR
+    path = Path(configured)
+    if path.is_absolute():
+        return path
+    cwd_path = Path.cwd() / path
+    if cwd_path.exists():
+        return cwd_path
+    return REPO_ROOT / path

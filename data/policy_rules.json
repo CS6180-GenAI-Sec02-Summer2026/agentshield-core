@@ -1,6 +1,6 @@
 {
   "schema_version": "0.1",
-  "description": "AgentShield structured policy rules. Each rule defines a condition and a decision (BLOCK, ASK_APPROVAL, or ALLOW). Rules are evaluated in order; the first matching rule determines the decision. If no rule matches, the default decision is ALLOW.",
+  "description": "AgentShield structured policy rules. Each rule defines a condition and a decision (BLOCK, ASK_APPROVAL, or ALLOW). Enabled matching rules are collected and the most restrictive decision wins. If no rule matches, the default decision is ALLOW.",
   "default_decision": "ALLOW",
   "rules": [
     {
@@ -108,7 +108,9 @@
             "check": "contains_instruction_pattern",
             "patterns": [
               "ignore previous instructions",
+              "ignore your previous instructions",
               "ignore above instructions",
+              "ignore all instructions",
               "disregard your instructions",
               "override your instructions",
               "forget your rules",
@@ -237,6 +239,28 @@
       "risk_level": "medium",
       "attack_categories": ["unauthorized_action"],
       "explanation_template": "Approval required: This operation affects multiple resources. Bulk or destructive operations require explicit user confirmation."
+    },
+    {
+      "rule_id": "POLICY-009",
+      "name": "Unauthorized file deletion",
+      "description": "Block file deletion when the user requested a read-only, listing, or otherwise non-destructive action.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["delete_file"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "proposed_tool_call",
+            "check": "contradicts_user_intent",
+            "description": "The proposed delete_file action does not match the user's original request."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "critical",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Blocked: Agent proposed a file deletion that does not match the user's request. Destructive actions that exceed explicit user intent are blocked."
     }
   ]
 }

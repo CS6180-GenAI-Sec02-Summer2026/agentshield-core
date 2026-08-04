@@ -1,5 +1,5 @@
 """
-AgentShield Firewall Test Runner v0.2
+AgentShield firewall test runner.
 
 Tests the Firewall Agent and Risk Classifier on 20 sample cases
 covering all 8 tools, all 3 decision types, and all risk categories.

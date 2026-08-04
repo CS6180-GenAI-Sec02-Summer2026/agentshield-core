@@ -1,5 +1,5 @@
 """
-AgentShield Policy Compiler Agent v0.1
+AgentShield policy compiler.
 
 Compiles natural-language security policies into structured JSON rules
 that the firewall can evaluate. Supports loading policies from markdown
@@ -19,9 +19,11 @@ Usage:
 
 import json
 import re
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
+
+from src.security_patterns import INJECTION_PATTERNS, SECRET_PATTERNS
 
 
 @dataclass
@@ -112,6 +114,9 @@ CONDITION_KEYWORD_MAP = {
     "instruction override": {"check": "contains_instruction_pattern", "field": "external_context"},
     "prompt injection": {"check": "contains_instruction_pattern", "field": "external_context"},
     "override": {"check": "contradicts_user_intent", "field": "proposed_tool_call"},
+    "contradicts": {"check": "contradicts_user_intent", "field": "proposed_tool_call"},
+    "read-only": {"check": "contradicts_user_intent", "field": "proposed_tool_call"},
+    "non-destructive": {"check": "contradicts_user_intent", "field": "proposed_tool_call"},
     "sensitive": {"check": "contains_sensitive_content", "field": "arguments.body|arguments.title"},
     "external participant": {"check": "has_external_participant_or_public", "field": "arguments.participants"},
     "public": {"check": "has_external_participant_or_public", "field": "arguments.visibility"},
@@ -143,32 +148,10 @@ ATTACK_CATEGORY_KEYWORDS = {
     "unauthorized_action": ["unauthorized", "bulk", "delete", "destructive", "not requested"],
 }
 
-# Secret patterns for credential-related rules
-SECRET_PATTERNS = [
-    "api_key", "api-key", "apikey", "password", "passwd",
-    "secret", "token", "access_token", "auth_token",
-    "private_key", "credential", "aws_secret",
-    "openai_api_key", "database_url", "connection_string",
-    "bearer", "authorization",
-]
-
-# Prompt injection patterns
-INJECTION_PATTERNS = [
-    "ignore previous instructions",
-    "ignore above instructions",
-    "disregard your instructions",
-    "override your instructions",
-    "forget your rules",
-    "new instructions:",
-    "system prompt:",
-    "you are now",
-    "instead, do the following",
-    "do not follow your original",
-    "ignore all prior",
-    "bypass security",
-    "act as if",
-    "pretend you are",
-]
+def _extract_markdown_field(text: str, label: str) -> str | None:
+    """Return the one-line value for a bold markdown policy field."""
+    match = re.search(rf"^\*\*{re.escape(label)}:\*\*\s*(.+)$", text, re.MULTILINE)
+    return match.group(1).strip() if match else None
 
 
 class PolicyCompilerAgent:
@@ -183,18 +166,31 @@ class PolicyCompilerAgent:
 
     def _extract_tools(self, text: str) -> list[str]:
         """Extract target tools from policy text."""
+        applies_to = _extract_markdown_field(text, "Applies to")
+        if applies_to:
+            applies_lower = applies_to.lower()
+            if "all tools" in applies_lower:
+                return ALL_TOOLS
+
+            tools = set()
+            for token in re.findall(r'`(\w+)`', applies_to):
+                if token in TOOL_KEYWORD_MAP:
+                    tools.update(TOOL_KEYWORD_MAP[token])
+            if tools:
+                return sorted(tools)
+
         text_lower = text.lower()
 
-        # Check for "all tools" first
         if "all tools" in text_lower:
             return ALL_TOOLS
 
         tools = set()
-        # Check for explicit tool names (backtick-wrapped)
         backtick_tools = re.findall(r'`(\w+)`', text)
         for bt in backtick_tools:
             if bt in TOOL_KEYWORD_MAP:
                 tools.update(TOOL_KEYWORD_MAP[bt])
+        if tools:
+            return sorted(tools)
 
         # Check for keyword matches
         for keyword, tool_list in TOOL_KEYWORD_MAP.items():
@@ -205,6 +201,12 @@ class PolicyCompilerAgent:
 
     def _extract_decision(self, text: str) -> str:
         """Extract the decision (BLOCK, ASK_APPROVAL, ALLOW) from policy text."""
+        decision_field = _extract_markdown_field(text, "Decision")
+        if decision_field:
+            normalized = decision_field.strip().upper()
+            if normalized in DECISION_KEYWORDS:
+                return normalized
+
         text_lower = text.lower()
 
         # Check for explicit decision labels first
@@ -271,7 +273,6 @@ class PolicyCompilerAgent:
         if not checks:
             return {"operator": "ALWAYS", "checks": []}
 
-        # Use AND if multiple checks, single check doesn't need operator logic
         operator = "AND" if len(checks) > 1 else "AND"
         return {"operator": operator, "checks": checks}
 
@@ -321,7 +322,6 @@ class PolicyCompilerAgent:
             conditions = self._extract_conditions(full_text, tools)
             explanation = self._generate_explanation_template(name, decision, tools)
 
-            # Auto-assign priority: BLOCK=1, ASK_APPROVAL=2, ALLOW=3
             if priority is None:
                 priority = {"BLOCK": 1, "ASK_APPROVAL": 2, "ALLOW": 3}.get(
                     decision, 2
@@ -330,7 +330,7 @@ class PolicyCompilerAgent:
             rule = CompiledRule(
                 rule_id=policy_id,
                 name=name,
-                description=full_text.strip()[:200],  # Truncate for storage
+                description=full_text.strip()[:200],
                 priority=priority,
                 enabled=True,
                 tools=tools,
@@ -369,7 +369,7 @@ class PolicyCompilerAgent:
                 rules=[],
             )
 
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             content = f.read()
 
         # Split by policy sections (## Policy N: ...)
@@ -384,9 +384,8 @@ class PolicyCompilerAgent:
 
         for section in policy_sections:
             # Extract policy number and name
-            header_match = re.match(
-                r'## Policy (\d+):\s*(.+?)(?:\n|$)', section
-            )
+            policy_text = section.split("\n---", 1)[0].strip()
+            header_match = re.match(r'## Policy (\d+):\s*(.+?)(?:\n|$)', policy_text)
             if not header_match:
                 continue
 
@@ -395,7 +394,7 @@ class PolicyCompilerAgent:
             policy_name = header_match.group(2).strip()
             policy_id = f"POLICY-{policy_num.zfill(3)}"
 
-            rule = self.compile_policy(policy_id, policy_name, section)
+            rule = self.compile_policy(policy_id, policy_name, policy_text)
 
             if rule:
                 self.compiled_rules.append(rule)
@@ -426,7 +425,7 @@ class PolicyCompilerAgent:
                 rules=[],
             )
 
-        with open(path, "r") as f:
+        with open(path, "r", encoding="utf-8") as f:
             data = json.load(f)
 
         rules_data = data.get("rules", [])
@@ -472,7 +471,7 @@ class PolicyCompilerAgent:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        with open(path, "w") as f:
+        with open(path, "w", encoding="utf-8") as f:
             json.dump(output, f, indent=2)
 
         print(f"Exported {len(self.compiled_rules)} compiled rules to {filepath}")
@@ -531,9 +530,10 @@ class PolicyCompilerAgent:
         for tool, entries in tool_decisions.items():
             decisions = set(d for _, d, _ in entries)
             if len(decisions) > 1:
-                # Multiple decisions for same tool is fine if priorities differ
-                priorities = [p for _, _, p in entries]
-                if len(set(priorities)) < len(priorities):
+                decisions_by_priority = {}
+                for _, decision, priority in entries:
+                    decisions_by_priority.setdefault(priority, set()).add(decision)
+                if any(len(decisions) > 1 for decisions in decisions_by_priority.values()):
                     warnings.append(
                         f"Tool '{tool}' has rules with same priority but different decisions: {entries}"
                     )
