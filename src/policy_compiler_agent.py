@@ -19,9 +19,11 @@ Usage:
 
 import json
 import re
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
+
+from src.security_patterns import INJECTION_PATTERNS, SECRET_PATTERNS
 
 
 @dataclass
@@ -145,34 +147,6 @@ ATTACK_CATEGORY_KEYWORDS = {
     "data_exfiltration": ["exfiltration", "leak", "external", "private", "sensitive", "credential", "secret"],
     "unauthorized_action": ["unauthorized", "bulk", "delete", "destructive", "not requested"],
 }
-
-# Secret patterns for credential-related rules
-SECRET_PATTERNS = [
-    "api_key", "api-key", "apikey", "password", "passwd",
-    "secret", "token", "access_token", "auth_token",
-    "private_key", "credential", "aws_secret",
-    "openai_api_key", "database_url", "connection_string",
-    "bearer", "authorization",
-]
-
-# Prompt injection patterns
-INJECTION_PATTERNS = [
-    "ignore previous instructions",
-    "ignore above instructions",
-    "disregard your instructions",
-    "override your instructions",
-    "forget your rules",
-    "new instructions:",
-    "system prompt:",
-    "you are now",
-    "instead, do the following",
-    "do not follow your original",
-    "ignore all prior",
-    "bypass security",
-    "act as if",
-    "pretend you are",
-]
-
 
 def _extract_markdown_field(text: str, label: str) -> str | None:
     """Return the one-line value for a bold markdown policy field."""

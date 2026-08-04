@@ -17,6 +17,7 @@ Usage:
     analyzer.export_comparison("data/baseline_comparison.json")
 """
 
+import csv
 import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
@@ -24,6 +25,7 @@ from typing import Optional
 
 from src.metrics import MetricsEngine, EvaluationResult, MetricsReport
 from src.firewall_agent import FirewallAgent
+from src.security_text import flatten_to_string
 
 
 # ============================================================
@@ -80,7 +82,7 @@ def simulate_prompt_guardrail(examples: list[dict]) -> list[EvaluationResult]:
         external_context = ex.get("external_context", "")
         proposed = ex.get("proposed_tool_call", {})
         arguments = proposed.get("arguments", {})
-        args_str = _flatten(arguments).lower()
+        args_str = flatten_to_string(arguments).lower()
         context_lower = external_context.lower() if isinstance(external_context, str) else ""
 
         decision = "ALLOW"  # Default
@@ -155,17 +157,6 @@ def simulate_agentshield(
         ))
 
     return results
-
-
-def _flatten(obj) -> str:
-    """Flatten nested dict/list into a string."""
-    if isinstance(obj, str):
-        return obj
-    elif isinstance(obj, dict):
-        return " ".join(f"{key} {_flatten(value)}" for key, value in obj.items())
-    elif isinstance(obj, list):
-        return " ".join(_flatten(v) for v in obj)
-    return str(obj)
 
 
 # ============================================================
@@ -314,7 +305,6 @@ class BaselineAnalyzer:
         print("=" * 80)
         print(f"Dataset size: {self.comparison.dataset_size} examples\n")
 
-        # Header
         print(f"{'Metric':<35} {'Unprotected':>12} {'Prompt Guard':>12} {'AgentShield':>12}")
         print("-" * 80)
 
@@ -353,7 +343,6 @@ class BaselineAnalyzer:
         path = Path(filepath)
         path.parent.mkdir(parents=True, exist_ok=True)
 
-        import csv
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["metric", "unprotected", "prompt_guardrail", "agentshield"])
@@ -374,13 +363,10 @@ class BaselineAnalyzer:
 
         Path(output_dir).mkdir(parents=True, exist_ok=True)
 
-        # Full comparison JSON
         self.export_comparison(f"{output_dir}/baseline_comparison.json")
 
-        # Comparison CSV
         self.export_comparison_csv(f"{output_dir}/baseline_comparison.csv")
 
-        # Per-configuration detailed reports
         self._engine_agentshield.export_report(f"{output_dir}/agentshield_metrics.json")
         self._engine_agentshield.export_summary_csv(f"{output_dir}/agentshield_summary.csv")
         self._engine_agentshield.export_confusion_matrix_csv(f"{output_dir}/agentshield_confusion_matrix.csv")

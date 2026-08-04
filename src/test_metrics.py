@@ -12,7 +12,6 @@ Usage:
     python3 -m src.test_metrics
 """
 
-import json
 import sys
 from pathlib import Path
 

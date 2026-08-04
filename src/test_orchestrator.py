@@ -6,10 +6,11 @@ from src.api import ScenarioRunRequest, _scenario_from_request, create_app
 from src.baseline_prompt_guardrail import run_prompt_guardrail_baseline
 from src.baseline_unprotected import run_unprotected_baseline
 from src.experiment_runner import ExperimentRunner
-from src.intent_utils import delete_is_authorized_by_request
+from src.intent_utils import delete_is_authorized_by_request, tool_is_authorized_by_request
 from src.orchestrator import AgentShieldOrchestrator, run_ad_hoc
 from src.policy_checker import PolicyChecker
 from src.scenario_store import available_datasets, load_scenarios
+from src.security_text import is_external_target
 from src.target_agent import TargetAgent
 from src.tools import (
     MAX_TOOL_EXECUTION_LOG_ENTRIES,
@@ -110,6 +111,14 @@ def test_delete_intent_uses_standalone_read_only_terms():
     assert delete_is_authorized_by_request("Clear temporary files")
     assert not delete_is_authorized_by_request("Clean up Downloads by listing what's in it")
     assert not delete_is_authorized_by_request("Show playlist.m3u")
+
+
+def test_shared_intent_and_target_helpers_avoid_substring_false_matches():
+    assert tool_is_authorized_by_request("send_http_request", "Fetch https://api.example/status")
+    assert not tool_is_authorized_by_request("send_http_request", "Review the budget notes")
+    assert not is_external_target("alice@company.com")
+    assert not is_external_target("service@example.org", ["@example.org"])
+    assert is_external_target("attacker@example.net")
 
 
 def test_delete_intent_substrings_do_not_force_read_only_block():
@@ -251,6 +260,7 @@ def main():
         test_metrics_does_not_append_audit_log,
         test_demo_scenarios_cover_decision_paths,
         test_delete_intent_uses_standalone_read_only_terms,
+        test_shared_intent_and_target_helpers_avoid_substring_false_matches,
         test_delete_intent_substrings_do_not_force_read_only_block,
         test_policy_checker_missing_rules_reports_resolved_path,
         test_ad_hoc_inference,

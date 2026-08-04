@@ -14,14 +14,13 @@ Usage:
 """
 
 import json
-import sys
 from datetime import datetime, timezone
-from dataclasses import dataclass, asdict, field
+from dataclasses import dataclass, asdict
 from pathlib import Path
 from typing import Optional
 
 from src.risk_classifier import classify_risk, RiskAssessment
-from src.policy_checker import PolicyChecker, CheckResult, PolicyViolation
+from src.policy_checker import PolicyChecker, CheckResult
 
 
 @dataclass
