@@ -8,21 +8,22 @@ assignees: ''
 
 ## Task
 
-**Parent Story:** <!-- Link to parent story issue -->
+**Parent story:**
 **Owner:**
 **Branch:**
 
 ## Description
-<!-- What specific work needs to be done? -->
 
-## Sub-issues / Checklist
+Describe the specific implementation, documentation, or validation work.
 
-- [ ] <!-- Sub-issue 1 -->
-- [ ] <!-- Sub-issue 2 -->
-- [ ] <!-- Sub-issue 3 -->
+## Sub-Issues / Checklist
 
-## Definition of Done
+- [ ] Sub-issue 1
+- [ ] Sub-issue 2
+- [ ] Sub-issue 3
 
-- [ ] Code complete
-- [ ] Tests passing
+## Definition Of Done
+
+- [ ] Code or documentation complete
+- [ ] Relevant tests and validation commands passing
 - [ ] Reviewed by at least one teammate

@@ -1,6 +1,6 @@
 ---
 name: Story
-about: A major weekly outcome owned by one teammate
+about: Major weekly outcome owned by one teammate
 title: "[STORY] "
 labels: story
 assignees: ''
@@ -9,22 +9,24 @@ assignees: ''
 ## Story
 
 **Owner:**
-**Milestone:**
+**Target milestone:**
 **Repository:**
 
 ## Description
-<!-- What is the major outcome this story delivers? -->
+
+Describe the outcome this story delivers and why it matters.
 
 ## Acceptance Criteria
 
-- [ ] <!-- Criterion 1 -->
-- [ ] <!-- Criterion 2 -->
-- [ ] <!-- Criterion 3 -->
+- [ ] Acceptance criterion 1
+- [ ] Acceptance criterion 2
+- [ ] Acceptance criterion 3
 
 ## Linked Tasks
 
-- [ ] <!-- Task 1 issue link -->
-- [ ] <!-- Task 2 issue link -->
+- [ ] Task issue link 1
+- [ ] Task issue link 2
 
 ## Notes
-<!-- Any dependencies, blockers, or context -->
+
+Add dependencies, blockers, or context.
