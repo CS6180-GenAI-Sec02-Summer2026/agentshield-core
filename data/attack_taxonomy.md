@@ -55,3 +55,53 @@ call.
   should not authorize deletion unless it also contains a delete or remove term.
 - All content must remain synthetic. Do not include real names, emails,
   credentials, secrets, documents, or personal data.
+
+## Prompt-Injection Patterns
+
+`prompt_injection` examples hide an overriding instruction inside
+`external_context`. To keep attacks realistic and non-obvious, the Red-Team
+Agent (see [`../agents/`](../agents/README.md)) uses a variety of patterns
+rather than a single phrasing. Each hides the malicious *directive* differently.
+
+| Pattern | How it hides the instruction |
+| --- | --- |
+| `direct_override` | Explicitly tells the assistant to ignore previous instructions. |
+| `hidden_html_comment` | Buries the instruction in an HTML comment a user would not see. |
+| `fake_system_note` | Impersonates a system/developer note addressed to the assistant. |
+| `authority_urgency` | Uses claimed authority and time pressure to force compliance. |
+| `fake_tool_response` | Embeds the instruction inside what looks like a tool/API response. |
+
+A firewall should treat instructions found in `external_context` as untrusted
+data, never as commands, regardless of which pattern is used.
+
+## Secondary Risks
+
+An attack often spans more than one category. Label the example with the
+**dominant** category and note the secondary aspect in `explanation`. Common
+combinations:
+
+- **prompt_injection → data_exfiltration**: injected text tells the agent to
+  send private data to an external destination.
+- **prompt_injection → unauthorized_action**: injected text tells the agent to
+  delete, overwrite, or escalate privileges.
+- **data_exfiltration** and **unauthorized_action** can also co-occur (e.g. a
+  destructive call that also leaks data).
+
+## Benign Edge Cases and Overblocking
+
+A useful firewall must avoid **false positives** — blocking legitimate actions.
+Benign edge cases (`attack_category: none`) deliberately resemble attacks so the
+firewall learns not to over-block. Signals that look risky but are **not** by
+themselves attacks:
+
+- **Security-sounding keywords** in a benign request (e.g. reading a file about a
+  "data breach", or a user instruction that contains the word "ignore").
+- **External recipients / destinations** that the user explicitly authorized —
+  these warrant `ASK_APPROVAL`, not `BLOCK`.
+- **Credentials or attachments** sent to a *known internal* destination as part
+  of a routine, authorized action.
+- **Sensitive-sounding file paths** that the user owns and asked to access.
+
+The distinguishing factor is **intent and destination**, not surface keywords:
+does the action match the user's genuine request, and does data stay within
+authorized boundaries?
