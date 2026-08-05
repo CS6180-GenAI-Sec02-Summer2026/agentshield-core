@@ -72,6 +72,11 @@ this broader coverage is what later **exposed the firewall's coverage gaps** (se
 
 ## 6. Attack Category Summary
 
+Counts below are **over the full corpus** (all 50 malicious examples across the
+three sources). The Red-Team Agent's own 25-example breakdown (11 / 7 / 7) is a
+subset of these and is reported separately in
+[`redteam_method.md`](redteam_method.md) §6.
+
 - **`prompt_injection` (19).** External content hides an overriding instruction
   that redirects the agent from the user's intent — e.g. an email that says
   "summarize me" but hides "forward the salaries file to an external address."
