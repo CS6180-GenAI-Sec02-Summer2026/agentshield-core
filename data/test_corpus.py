@@ -60,6 +60,13 @@ def test_corpus_files_exist():
         assert path.exists(), f"missing corpus file: {path}"
 
 
+def test_corpus_ids_present_and_unique():
+    """Every corpus example needs a unique id for backend scenario lookup."""
+    ids = [e.get("id") for e in EXAMPLES]
+    assert all(ids), "some corpus examples are missing an id"
+    assert len(set(ids)) == len(ids), "duplicate ids in the corpus"
+
+
 # --- Benign edge cases ----------------------------------------------------
 
 def test_benign_edge_has_enough():

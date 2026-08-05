@@ -24,8 +24,13 @@ OUTPUT_PATH = Path(__file__).resolve().parent.parent / "data" / "red_team_exampl
 
 
 def build_examples() -> list[dict]:
-    """Generate the full list of adversarial examples from the seeds."""
-    return RedTeamAgent().generate_examples(all_seeds())
+    """Generate the full list of adversarial examples from the seeds.
+
+    Each example gets a stable ``id`` (``rt-001`` ...) so it can be looked up by
+    the backend scenario store.
+    """
+    examples = RedTeamAgent().generate_examples(all_seeds())
+    return [{"id": f"rt-{i:03d}", **e} for i, e in enumerate(examples, 1)]
 
 
 def main() -> None:
