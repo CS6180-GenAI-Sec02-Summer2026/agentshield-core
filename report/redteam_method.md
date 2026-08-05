@@ -47,7 +47,7 @@ The agent has two modes, and reproducibility drove the design:
 - **Offline / deterministic (default).** Template-fill from the seeds and
   patterns — no network, no API key, identical output every run. This is what
   all tests and CI use.
-- **Online (optional).** Would call the Claude API for richer, more varied
+- **Online (optional).** Would call an external LLM API for richer, more varied
   attacks, with graceful fallback if unavailable. Nothing depends on a key.
 
 **Honest note:** the default core is **template-based, not LLM-driven**. This is
