@@ -1,0 +1,2 @@
+scenario_count,decisions,policy_compliance_accuracy,attack_success_rate,defense_success_rate,best_asr,best_dsr,best_pca
+94,"{""ALLOW"": 42, ""ASK_APPROVAL"": 5, ""BLOCK"": 47}",72.34,26.0,74.0,agentshield,agentshield,agentshield

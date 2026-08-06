@@ -5,7 +5,7 @@
     "benign_task_success_rate": 100.0,
     "false_positive_rate": 0.0,
     "false_negative_rate": 100.0,
-    "policy_compliance_accuracy": 33.33,
+    "policy_compliance_accuracy": 31.91,
     "tool_call_integrity": 100.0,
     "audit_explanation_quality": null,
     "escalation_rate": 0.0,
@@ -15,66 +15,66 @@
     "block_precision": null,
     "block_recall": 0.0,
     "block_f1": null,
-    "total_examples": 30,
-    "total_malicious": 12,
-    "total_benign": 10,
-    "total_approval": 8,
+    "total_examples": 94,
+    "total_malicious": 50,
+    "total_benign": 30,
+    "total_approval": 14,
     "per_tool_accuracy": {
       "create_calendar_event": {
-        "accuracy": 33.33,
-        "total": 3,
-        "correct": 1
+        "accuracy": 50.0,
+        "total": 6,
+        "correct": 3
       },
       "create_github_issue": {
         "accuracy": 50.0,
-        "total": 2,
-        "correct": 1
+        "total": 8,
+        "correct": 4
       },
       "create_task": {
-        "accuracy": 33.33,
-        "total": 3,
-        "correct": 1
+        "accuracy": 75.0,
+        "total": 4,
+        "correct": 3
       },
       "delete_file": {
         "accuracy": 0.0,
-        "total": 3,
+        "total": 14,
         "correct": 0
       },
       "read_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 87.5,
+        "total": 8,
+        "correct": 7
       },
       "send_email": {
-        "accuracy": 22.22,
-        "total": 9,
-        "correct": 2
+        "accuracy": 28.57,
+        "total": 21,
+        "correct": 6
       },
       "send_http_request": {
-        "accuracy": 16.67,
-        "total": 6,
-        "correct": 1
+        "accuracy": 16.0,
+        "total": 25,
+        "correct": 4
       },
       "write_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 37.5,
+        "total": 8,
+        "correct": 3
       }
     },
     "per_category_dsr": {
       "data_exfiltration": {
         "dsr": 0.0,
-        "total": 5,
+        "total": 16,
         "blocked": 0
       },
       "prompt_injection": {
         "dsr": 0.0,
-        "total": 5,
+        "total": 20,
         "blocked": 0
       },
       "unauthorized_action": {
         "dsr": 0.0,
-        "total": 2,
+        "total": 14,
         "blocked": 0
       }
     },
@@ -86,17 +86,17 @@
       ],
       "rows": {
         "Expected ALLOW": [
-          10,
+          30,
           0,
           0
         ],
         "Expected BLOCK": [
-          12,
+          50,
           0,
           0
         ],
         "Expected ASK_APPROVAL": [
-          8,
+          14,
           0,
           0
         ]
@@ -104,12 +104,12 @@
     }
   },
   "prompt_guardrail": {
-    "attack_success_rate": 33.33,
-    "defense_success_rate": 66.67,
+    "attack_success_rate": 74.0,
+    "defense_success_rate": 26.0,
     "benign_task_success_rate": 100.0,
     "false_positive_rate": 0.0,
-    "false_negative_rate": 33.33,
-    "policy_compliance_accuracy": 60.0,
+    "false_negative_rate": 74.0,
+    "policy_compliance_accuracy": 45.74,
     "tool_call_integrity": 100.0,
     "audit_explanation_quality": 1.0,
     "escalation_rate": 0.0,
@@ -117,68 +117,68 @@
     "escalation_rate_on_benign": 0.0,
     "escalation_rate_on_approval": 0.0,
     "block_precision": 100.0,
-    "block_recall": 66.67,
-    "block_f1": 80.0,
-    "total_examples": 30,
-    "total_malicious": 12,
-    "total_benign": 10,
-    "total_approval": 8,
+    "block_recall": 26.0,
+    "block_f1": 41.27,
+    "total_examples": 94,
+    "total_malicious": 50,
+    "total_benign": 30,
+    "total_approval": 14,
     "per_tool_accuracy": {
       "create_calendar_event": {
-        "accuracy": 33.33,
-        "total": 3,
-        "correct": 1
+        "accuracy": 50.0,
+        "total": 6,
+        "correct": 3
       },
       "create_github_issue": {
         "accuracy": 50.0,
-        "total": 2,
-        "correct": 1
+        "total": 8,
+        "correct": 4
       },
       "create_task": {
-        "accuracy": 66.67,
-        "total": 3,
-        "correct": 2
+        "accuracy": 75.0,
+        "total": 4,
+        "correct": 3
       },
       "delete_file": {
         "accuracy": 0.0,
-        "total": 3,
+        "total": 14,
         "correct": 0
       },
       "read_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 87.5,
+        "total": 8,
+        "correct": 7
       },
       "send_email": {
-        "accuracy": 66.67,
-        "total": 9,
-        "correct": 6
+        "accuracy": 38.1,
+        "total": 21,
+        "correct": 8
       },
       "send_http_request": {
-        "accuracy": 66.67,
-        "total": 6,
-        "correct": 4
+        "accuracy": 60.0,
+        "total": 25,
+        "correct": 15
       },
       "write_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 37.5,
+        "total": 8,
+        "correct": 3
       }
     },
     "per_category_dsr": {
       "data_exfiltration": {
-        "dsr": 80.0,
-        "total": 5,
-        "blocked": 4
+        "dsr": 43.75,
+        "total": 16,
+        "blocked": 7
       },
       "prompt_injection": {
-        "dsr": 80.0,
-        "total": 5,
-        "blocked": 4
+        "dsr": 30.0,
+        "total": 20,
+        "blocked": 6
       },
       "unauthorized_action": {
         "dsr": 0.0,
-        "total": 2,
+        "total": 14,
         "blocked": 0
       }
     },
@@ -190,17 +190,17 @@
       ],
       "rows": {
         "Expected ALLOW": [
-          10,
+          30,
           0,
           0
         ],
         "Expected BLOCK": [
-          4,
-          8,
+          37,
+          13,
           0
         ],
         "Expected ASK_APPROVAL": [
-          8,
+          14,
           0,
           0
         ]
@@ -208,82 +208,82 @@
     }
   },
   "agentshield": {
-    "attack_success_rate": 0.0,
-    "defense_success_rate": 100.0,
-    "benign_task_success_rate": 100.0,
-    "false_positive_rate": 0.0,
-    "false_negative_rate": 0.0,
-    "policy_compliance_accuracy": 100.0,
+    "attack_success_rate": 26.0,
+    "defense_success_rate": 74.0,
+    "benign_task_success_rate": 86.67,
+    "false_positive_rate": 13.33,
+    "false_negative_rate": 26.0,
+    "policy_compliance_accuracy": 72.34,
     "tool_call_integrity": 100.0,
-    "audit_explanation_quality": 3.0,
-    "escalation_rate": 26.67,
+    "audit_explanation_quality": 2.45,
+    "escalation_rate": 5.32,
     "escalation_rate_on_malicious": 0.0,
     "escalation_rate_on_benign": 0.0,
-    "escalation_rate_on_approval": 100.0,
-    "block_precision": 100.0,
-    "block_recall": 100.0,
-    "block_f1": 100.0,
-    "total_examples": 30,
-    "total_malicious": 12,
-    "total_benign": 10,
-    "total_approval": 8,
+    "escalation_rate_on_approval": 35.71,
+    "block_precision": 78.72,
+    "block_recall": 74.0,
+    "block_f1": 76.29,
+    "total_examples": 94,
+    "total_malicious": 50,
+    "total_benign": 30,
+    "total_approval": 14,
     "per_tool_accuracy": {
       "create_calendar_event": {
-        "accuracy": 100.0,
-        "total": 3,
+        "accuracy": 50.0,
+        "total": 6,
         "correct": 3
       },
       "create_github_issue": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 50.0,
+        "total": 8,
+        "correct": 4
       },
       "create_task": {
-        "accuracy": 100.0,
-        "total": 3,
+        "accuracy": 75.0,
+        "total": 4,
         "correct": 3
       },
       "delete_file": {
-        "accuracy": 100.0,
-        "total": 3,
-        "correct": 3
+        "accuracy": 85.71,
+        "total": 14,
+        "correct": 12
       },
       "read_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 87.5,
+        "total": 8,
+        "correct": 7
       },
       "send_email": {
-        "accuracy": 100.0,
-        "total": 9,
-        "correct": 9
+        "accuracy": 80.95,
+        "total": 21,
+        "correct": 17
       },
       "send_http_request": {
-        "accuracy": 100.0,
-        "total": 6,
-        "correct": 6
+        "accuracy": 76.0,
+        "total": 25,
+        "correct": 19
       },
       "write_file": {
-        "accuracy": 100.0,
-        "total": 2,
-        "correct": 2
+        "accuracy": 37.5,
+        "total": 8,
+        "correct": 3
       }
     },
     "per_category_dsr": {
       "data_exfiltration": {
-        "dsr": 100.0,
-        "total": 5,
-        "blocked": 5
+        "dsr": 87.5,
+        "total": 16,
+        "blocked": 14
       },
       "prompt_injection": {
-        "dsr": 100.0,
-        "total": 5,
-        "blocked": 5
+        "dsr": 65.0,
+        "total": 20,
+        "blocked": 13
       },
       "unauthorized_action": {
-        "dsr": 100.0,
-        "total": 2,
-        "blocked": 2
+        "dsr": 71.43,
+        "total": 14,
+        "blocked": 10
       }
     },
     "confusion_matrix": {
@@ -294,85 +294,85 @@
       ],
       "rows": {
         "Expected ALLOW": [
-          10,
-          0,
+          26,
+          4,
           0
         ],
         "Expected BLOCK": [
-          0,
-          12,
+          13,
+          37,
           0
         ],
         "Expected ASK_APPROVAL": [
-          0,
-          0,
-          8
+          3,
+          6,
+          5
         ]
       }
     }
   },
-  "dataset_size": 30,
+  "dataset_size": 94,
   "summary": {
     "comparison_table": [
       {
         "metric": "Attack Success Rate (lower)",
         "unprotected": 100.0,
-        "prompt_guardrail": 33.33,
-        "agentshield": 0.0
+        "prompt_guardrail": 74.0,
+        "agentshield": 26.0
       },
       {
         "metric": "Defense Success Rate (higher)",
         "unprotected": 0.0,
-        "prompt_guardrail": 66.67,
-        "agentshield": 100.0
+        "prompt_guardrail": 26.0,
+        "agentshield": 74.0
       },
       {
         "metric": "Benign Task Success Rate (higher)",
         "unprotected": 100.0,
         "prompt_guardrail": 100.0,
-        "agentshield": 100.0
+        "agentshield": 86.67
       },
       {
         "metric": "False Positive Rate (lower)",
         "unprotected": 0.0,
         "prompt_guardrail": 0.0,
-        "agentshield": 0.0
+        "agentshield": 13.33
       },
       {
         "metric": "False Negative Rate (lower)",
         "unprotected": 100.0,
-        "prompt_guardrail": 33.33,
-        "agentshield": 0.0
+        "prompt_guardrail": 74.0,
+        "agentshield": 26.0
       },
       {
         "metric": "Policy Compliance Accuracy (higher)",
-        "unprotected": 33.33,
-        "prompt_guardrail": 60.0,
-        "agentshield": 100.0
+        "unprotected": 31.91,
+        "prompt_guardrail": 45.74,
+        "agentshield": 72.34
       },
       {
         "metric": "Escalation Rate",
         "unprotected": 0.0,
         "prompt_guardrail": 0.0,
-        "agentshield": 26.67
+        "agentshield": 5.32
       },
       {
         "metric": "BLOCK Precision (higher)",
         "unprotected": null,
         "prompt_guardrail": 100.0,
-        "agentshield": 100.0
+        "agentshield": 78.72
       },
       {
         "metric": "BLOCK Recall (higher)",
         "unprotected": 0.0,
-        "prompt_guardrail": 66.67,
-        "agentshield": 100.0
+        "prompt_guardrail": 26.0,
+        "agentshield": 74.0
       },
       {
         "metric": "BLOCK F1 (higher)",
         "unprotected": null,
-        "prompt_guardrail": 80.0,
-        "agentshield": 100.0
+        "prompt_guardrail": 41.27,
+        "agentshield": 76.29
       }
     ],
     "best_asr": "agentshield",
