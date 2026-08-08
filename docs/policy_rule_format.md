@@ -64,17 +64,25 @@ Each check has a `field`, a `check` type, and optional `value` or `patterns`.
 | Check Type | Purpose | Used By |
 | --- | --- | --- |
 | `equals` | Exact field-value match. | `POLICY-002`, `POLICY-007` |
-| `contains_file_content` | Detects file-content references in arguments. | `POLICY-001` |
-| `is_external_recipient` | Checks whether an email recipient is outside trusted domains. | `POLICY-001` |
+| `contains_file_content` | Detects file-content references in arguments. | Legacy-compatible checker support |
+| `contains_sensitive_sharing_content` | Detects sensitive business data, private exports, or credential-like sharing content. | `POLICY-001` |
+| `is_external_recipient` | Checks whether an email recipient is outside trusted domains. | `POLICY-001`, `POLICY-011` |
 | `contains_secret_pattern` | Matches credential patterns such as API keys, passwords, and tokens. | `POLICY-003` |
 | `is_external_target` | Checks whether a URL or email target is external. | `POLICY-003` |
-| `contradicts_user_intent` | Detects tool calls that do not match the user's original request. | `POLICY-004`, `POLICY-009` |
+| `contains_credential_value` | Detects credential-like key/value material. | `POLICY-013` |
+| `contradicts_user_intent` | Detects tool calls that do not match the user's original request. | `POLICY-004`, `POLICY-005`, `POLICY-009`, `POLICY-010` |
 | `contains_instruction_pattern` | Matches prompt-injection phrases in external context. | `POLICY-004` |
-| `not_in_user_request` | Checks whether a URL was absent from the user's request. | `POLICY-005` |
-| `is_external_url` | Checks whether a URL points to an external domain. | `POLICY-005` |
+| `not_in_user_request` | Checks whether a value was absent from the user's request. | `POLICY-014`, `POLICY-015` |
+| `is_external_url` | Checks whether a URL points to an external domain. | `POLICY-005`, `POLICY-017` |
+| `is_state_changing_http_method` | Checks whether an HTTP method can mutate server state. | `POLICY-016`, `POLICY-017` |
+| `user_request_is_read_only` | Detects read-only user intent. | `POLICY-016` |
 | `contains_sensitive_content` | Detects financial, credential, or proprietary content. | `POLICY-006` |
-| `has_external_participant_or_public` | Checks for external participants or public visibility. | `POLICY-006` |
+| `has_external_participant_or_public` | Checks for external participants, attendees, or public visibility. | `POLICY-006`, `POLICY-018` |
 | `contains_internal_reference` | Detects internal IPs, private URLs, or system references. | `POLICY-007` |
+| `is_public_repository` | Detects public GitHub repositories from visibility or repo naming. | `POLICY-013` |
+| `contains_sensitive_file_path` | Detects sensitive file paths such as SSH keys and environment files. | `POLICY-014` |
+| `contains_protected_file_change` | Detects writes to config, allowlists, environment files, or security settings. | `POLICY-012` |
+| `is_broadcast_recipient` | Detects broad group recipients. | `POLICY-015` |
 | `count_greater_than` | Checks whether a list field exceeds a threshold. | `POLICY-008` |
 | `greater_than` | Numeric comparison on a field value. | `POLICY-008` |
 
@@ -93,8 +101,8 @@ inside another word. `delete_file` has additional handling so read-only requests
 only permit deletion when the request also explicitly asks to delete or remove.
 
 External-recipient and external-target checks use the default internal email
-domains `@company.com` and `@internal.org`, plus any internal domains supplied
-by a programmatic scenario payload.
+domains `@agentshield.example`, `@company.example`, and `@internal.example`, plus any
+internal domains supplied by a programmatic scenario payload.
 
 ## Field Paths
 
@@ -127,14 +135,14 @@ audit and explanation generation rather than stopping at the first match.
 1. Choose a unique `rule_id`, such as `POLICY-010`.
 2. Specify the tool or tools the rule applies to.
 3. Define conditions using existing check types, or add a new check type to
-   `src/policy_checker.py` and `src/label_validator.py`.
+   `src/policy_checker.py`.
 4. Add shared patterns or text helpers when the behavior must stay aligned
    across policy checks, risk classification, and label validation.
 5. Set `decision`, `risk_level`, `attack_categories`, and
    `explanation_template`.
 6. Add the rule to `data/policy_rules.json`.
-7. Add focused coverage in `src/label_validator.py`, `src/test_firewall.py`, or
-   `src/test_integration.py`.
+7. Add focused coverage in `src/test_firewall.py`, `src/test_integration.py`, or
+   `src/test_orchestrator.py`.
 8. Run validation.
 
 ```bash

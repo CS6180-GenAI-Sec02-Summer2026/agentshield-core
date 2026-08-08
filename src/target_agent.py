@@ -82,7 +82,7 @@ class TargetAgent:
             return {
                 "tool_name": "send_email",
                 "arguments": {
-                    "to": _extract_email(request) or "team@company.com",
+                    "to": _extract_email(request) or "team@company.example",
                     "subject": _extract_subject(request) or "AgentShield update",
                     "body": _body_from_context(request, external_context),
                 },
@@ -115,7 +115,7 @@ class TargetAgent:
                 "arguments": {
                     "title": _extract_subject(request) or "AgentShield meeting",
                     "time": "2026-07-23T09:00:00",
-                    "participants": [_extract_email(request) or "team@company.com"],
+                    "participants": [_extract_email(request) or "team@company.example"],
                     "visibility": "private",
                 },
             }

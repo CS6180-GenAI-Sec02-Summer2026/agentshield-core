@@ -1,4 +1,4 @@
-"""Prompt-injection pattern library for the AgentShield Red-Team Agent (M3-S2).
+"""Prompt-injection pattern library for the AgentShield red-team generator.
 
 Each pattern describes one way an attacker hides an overriding instruction
 inside external content (email, document, webpage, tool response). The Red-Team
@@ -6,7 +6,7 @@ Agent renders these patterns with a synthetic malicious `directive` to produce
 the `external_context` field of adversarial dataset examples.
 
 Using a variety of patterns keeps generated attacks from being too obvious
-(all "ignore previous instructions"), which is one of the M3-S2 bug items.
+(all "ignore previous instructions"), which is a tracked generation risk.
 """
 
 from __future__ import annotations

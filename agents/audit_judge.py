@@ -1,4 +1,4 @@
-"""Audit-explanation judge for AgentShield (M5-S2).
+"""Audit-explanation judge for AgentShield.
 
 Scores the QUALITY of an audit explanation against the rubric in
 `data/audit_rubric.md` (five criteria, 0-2 each, max 10). This judges how well
@@ -8,8 +8,7 @@ ALLOW/BLOCK/ASK_APPROVAL decision itself is correct.
 Two modes, mirroring the Red-Team Agent:
   * offline (DEFAULT): deterministic, rule-based scoring. No API key, used by
     all tests. Designed to penalize weak/generic/empty explanations.
-  * online (deferred): would call the Claude API to score. Raises
-    NotImplementedError for now.
+  * online (reserved extension point): currently raises NotImplementedError.
 """
 
 from __future__ import annotations

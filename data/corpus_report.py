@@ -1,8 +1,8 @@
-"""Combined-corpus validation and report for AgentShield (M4-S2).
+"""Combined-corpus validation and report for AgentShield.
 
 Treats the three dataset files as one corpus, schema-validates every example,
 flags any duplicate `user_request` (within or across files), and prints the
-combined distribution. Guards the M4-S2 bug items: too few benign cases,
+combined distribution. Guards corpus quality risks: too few benign cases,
 missing attack category, and repetitive/duplicate examples.
 
 Usage:

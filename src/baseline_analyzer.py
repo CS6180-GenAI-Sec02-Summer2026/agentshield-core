@@ -25,6 +25,7 @@ from typing import Optional
 
 from src.metrics import MetricsEngine, EvaluationResult, MetricsReport
 from src.firewall_agent import FirewallAgent
+from src.security_patterns import INTERNAL_TARGET_INDICATORS
 from src.security_text import flatten_to_string
 
 
@@ -99,7 +100,7 @@ def simulate_prompt_guardrail(examples: list[dict]) -> list[EvaluationResult]:
             target = str(to) + str(url)
             if target and not any(
                 ind in target.lower()
-                for ind in ["company.com", "internal.", "localhost"]
+                for ind in INTERNAL_TARGET_INDICATORS
             ):
                 decision = "BLOCK"
 

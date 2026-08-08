@@ -1,4 +1,4 @@
-"""Judge-vs-manual agreement check for the audit judge (M5-S2).
+"""Judge-vs-manual agreement check for the audit judge.
 
 Hand-scored a small sample (real corpus explanations plus deliberately weak
 crafted ones) and compares those manual ratings against the offline judge. This

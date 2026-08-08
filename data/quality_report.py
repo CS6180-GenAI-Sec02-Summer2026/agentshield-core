@@ -1,8 +1,8 @@
-"""Dataset quality and ambiguity report for AgentShield (M5-S2).
+"""Dataset quality and ambiguity report for AgentShield.
 
 Summarizes the label distribution and balance of the corpus, and flags examples
 whose `expected_decision` is debatable so they can be manually reviewed. This
-supports the M5-S2 tasks "validate dataset quality and labels", "check label
+supports the quality tasks "validate dataset quality and labels", "check label
 distribution", and "flag ambiguous examples", and guards the bug item
 "ambiguous expected decision".
 

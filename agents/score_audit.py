@@ -1,4 +1,4 @@
-"""Score every audit explanation in the corpus against the rubric (M5-S2).
+"""Score every audit explanation in the corpus against the rubric.
 
 Runs the offline audit judge over the corpus explanations and writes
 `data/audit_scores.json`. Because no firewall "early runs" exist yet, the

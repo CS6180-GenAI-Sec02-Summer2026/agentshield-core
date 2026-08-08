@@ -40,8 +40,9 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 | `src/metrics.py` | Security, usability, and accuracy metrics. |
 | `src/policy_compiler_agent.py` | Markdown policy compiler for structured rule exports. |
 | `src/label_validator.py` | Dataset label consistency checker. |
+| `agents/` | Deterministic red-team generation and audit-quality utilities. |
 | `data/` | Synthetic scenarios, schema, policy rules, audit logs, and exports. |
-| `docs/` | Architecture, API contract, policies, rule format, and metrics docs. |
+| `docs/` | Architecture, API contract, policies, rule format, metrics, and project report. |
 
 ## Setup
 
@@ -93,24 +94,40 @@ PYTHONPATH=. python3 src/baseline_prompt_guardrail.py
 ```
 
 Generated evaluation artifacts are written under `data/evaluation/`.
+`src/experiment_runner.py` covers every discoverable stored scenario. In the
+committed dataset set, that is 94 scenarios total: demo, sample, dataset v0,
+red-team, and benign-edge datasets. Metrics tests use temporary export
+directories so the committed full-scenario artifacts stay stable after test
+runs.
 
 ## Full Validation
 
 Run the complete local backend check set before merging:
 
 ```bash
-PYTHONPATH=. python3 -m py_compile src/*.py data/*.py
+PYTHONPATH=. python3 -m py_compile src/*.py data/*.py agents/*.py
 PYTHONPATH=. python3 -m pytest -q
 PYTHONPATH=. python3 data/test_validate_dataset.py
+PYTHONPATH=. python3 data/test_dataset_v0.py
+PYTHONPATH=. python3 data/test_corpus.py
 PYTHONPATH=. python3 src/test_orchestrator.py
 PYTHONPATH=. python3 src/test_firewall.py
 PYTHONPATH=. python3 src/test_integration.py
 PYTHONPATH=. python3 src/test_metrics.py
+PYTHONPATH=. python3 agents/test_red_team_agent.py
+PYTHONPATH=. python3 agents/test_injection_patterns.py
+PYTHONPATH=. python3 agents/test_audit_judge.py
 PYTHONPATH=. python3 data/validate_dataset.py data/sample_examples.json
 PYTHONPATH=. python3 data/validate_dataset.py data/demo_scenarios.json
+PYTHONPATH=. python3 data/validate_dataset.py data/dataset_v0.json
+PYTHONPATH=. python3 data/validate_dataset.py data/red_team_examples.json
+PYTHONPATH=. python3 data/validate_dataset.py data/benign_edge_cases.json
 PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --test
 PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/sample_examples.json
 PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/demo_scenarios.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/dataset_v0.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/red_team_examples.json
+PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dataset data/benign_edge_cases.json
 git diff --check
 ```
 
@@ -121,4 +138,6 @@ git diff --check
 - `docs/safety_policies.md` - human-readable safety policies.
 - `docs/policy_rule_format.md` - compiled rule format.
 - `docs/evaluation_metrics.md` - metrics definitions and formulas.
+- `docs/report/README.md` - project report and supporting evidence index.
 - `data/README.md` - dataset schema, labels, validation, and safety notes.
+- `agents/README.md` - red-team generation and audit-quality utility guide.

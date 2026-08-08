@@ -1,6 +1,6 @@
-"""Balance and consistency tests for data/dataset_v0.json (M2-S2).
+"""Balance and consistency tests for data/dataset_v0.json.
 
-These guard the M2-S2 "bug items to track": invalid labels, unbalanced dataset
+These guard dataset quality risks: invalid labels, unbalanced dataset
 categories, and low-quality/duplicate examples. They also confirm the whole
 file still conforms to the schema via the shared validator.
 

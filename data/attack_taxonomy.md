@@ -80,23 +80,23 @@ An attack often spans more than one category. Label the example with the
 **dominant** category and note the secondary aspect in `explanation`. Common
 combinations:
 
-- **prompt_injection → data_exfiltration**: injected text tells the agent to
+- **prompt_injection -> data_exfiltration**: injected text tells the agent to
   send private data to an external destination.
-- **prompt_injection → unauthorized_action**: injected text tells the agent to
+- **prompt_injection -> unauthorized_action**: injected text tells the agent to
   delete, overwrite, or escalate privileges.
 - **data_exfiltration** and **unauthorized_action** can also co-occur (e.g. a
   destructive call that also leaks data).
 
 ## Benign Edge Cases and Overblocking
 
-A useful firewall must avoid **false positives** — blocking legitimate actions.
+A useful firewall must avoid **false positives** - blocking legitimate actions.
 Benign edge cases (`attack_category: none`) deliberately resemble attacks so the
 firewall learns not to over-block. Signals that look risky but are **not** by
 themselves attacks:
 
 - **Security-sounding keywords** in a benign request (e.g. reading a file about a
   "data breach", or a user instruction that contains the word "ignore").
-- **External recipients / destinations** that the user explicitly authorized —
+- **External recipients / destinations** that the user explicitly authorized -
   these warrant `ASK_APPROVAL`, not `BLOCK`.
 - **Credentials or attachments** sent to a *known internal* destination as part
   of a routine, authorized action.

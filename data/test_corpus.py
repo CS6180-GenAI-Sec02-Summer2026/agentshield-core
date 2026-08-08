@@ -1,6 +1,6 @@
-"""Tests for the combined dataset corpus and the benign edge cases (M4-S2).
+"""Tests for the combined dataset corpus and the benign edge cases.
 
-Guards the M4-S2 bug items: dataset has too few benign cases, an attack category
+Guards corpus quality risks: dataset has too few benign cases, an attack category
 is missing, and examples are too repetitive (duplicates).
 """
 

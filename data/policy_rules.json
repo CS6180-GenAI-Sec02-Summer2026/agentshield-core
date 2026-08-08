@@ -5,8 +5,8 @@
   "rules": [
     {
       "rule_id": "POLICY-001",
-      "name": "Private file to external recipient",
-      "description": "Block sending private or internal file contents to external email recipients.",
+      "name": "Sensitive content to external recipient",
+      "description": "Block sending sensitive or credential-like content to external email recipients.",
       "priority": 1,
       "enabled": true,
       "tools": ["send_email"],
@@ -14,9 +14,9 @@
         "operator": "AND",
         "checks": [
           {
-            "field": "arguments.body",
-            "check": "contains_file_content",
-            "description": "Email body or attachment contains content sourced from a file read via read_file."
+            "field": "arguments",
+            "check": "contains_sensitive_sharing_content",
+            "description": "Email body or attachment contains sensitive business data, secrets, credentials, or private export data."
           },
           {
             "field": "arguments.to",
@@ -28,7 +28,7 @@
       "decision": "BLOCK",
       "risk_level": "critical",
       "attack_categories": ["data_exfiltration"],
-      "explanation_template": "Blocked: Attempted to send private file contents to external recipient {arguments.to}. This violates the data exfiltration policy."
+      "explanation_template": "Blocked: Attempted to send sensitive content to external recipient {arguments.to}. This violates the data exfiltration policy."
     },
     {
       "rule_id": "POLICY-002",
@@ -71,7 +71,8 @@
               "password", "passwd", "secret",
               "token", "access_token", "auth_token",
               "private_key", "credential",
-              "AWS_SECRET", "OPENAI_API_KEY",
+              "license", "license_key",
+              "AWS_SECRET", "MODEL_API_KEY",
               "DATABASE_URL", "CONNECTION_STRING"
             ],
             "description": "Tool call arguments contain patterns matching secrets or credentials."
@@ -132,7 +133,7 @@
     {
       "rule_id": "POLICY-005",
       "name": "Unauthorized external HTTP requests",
-      "description": "Block HTTP requests to URLs not explicitly mentioned or approved by the user.",
+      "description": "Block external HTTP requests when the proposed request does not match user intent.",
       "priority": 1,
       "enabled": true,
       "tools": ["send_http_request"],
@@ -140,9 +141,9 @@
         "operator": "AND",
         "checks": [
           {
-            "field": "arguments.url",
-            "check": "not_in_user_request",
-            "description": "The target URL was not mentioned in the user's original request."
+            "field": "proposed_tool_call",
+            "check": "contradicts_user_intent",
+            "description": "The proposed HTTP request does not match the user's original request."
           },
           {
             "field": "arguments.url",
@@ -154,7 +155,7 @@
       "decision": "BLOCK",
       "risk_level": "high",
       "attack_categories": ["data_exfiltration", "unauthorized_action"],
-      "explanation_template": "Blocked: HTTP request to {arguments.url} was not requested by the user and appears to originate from external context. Unauthorized external requests are blocked by policy."
+      "explanation_template": "Blocked: HTTP request to {arguments.url} does not match the user's stated intent. Unauthorized external requests are blocked by policy."
     },
     {
       "rule_id": "POLICY-006",
@@ -167,7 +168,7 @@
         "operator": "AND",
         "checks": [
           {
-            "field": "arguments.body|arguments.title",
+            "field": "arguments.body|arguments.description|arguments.title",
             "check": "contains_sensitive_content",
             "description": "Event or task body contains potentially sensitive information (financial data, credentials, internal project details)."
           },
@@ -261,6 +262,229 @@
       "risk_level": "critical",
       "attack_categories": ["unauthorized_action"],
       "explanation_template": "Blocked: Agent proposed a file deletion that does not match the user's request. Destructive actions that exceed explicit user intent are blocked."
+    },
+    {
+      "rule_id": "POLICY-010",
+      "name": "Unauthorized state-changing tool call",
+      "description": "Block state-changing tool calls that do not match the user's requested action.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["write_file", "create_calendar_event", "create_task", "create_github_issue"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "proposed_tool_call",
+            "check": "contradicts_user_intent",
+            "description": "The proposed state-changing tool call does not match the user's original request."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Blocked: The proposed state-changing tool call exceeds the user's requested action."
+    },
+    {
+      "rule_id": "POLICY-011",
+      "name": "External email requires approval",
+      "description": "Require approval before sending otherwise allowed email to an external recipient.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["send_email"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.to",
+            "check": "is_external_recipient",
+            "description": "Recipient email address is outside known internal domains."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "medium",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Approval required: Email recipient {arguments.to} is external. Please confirm the send is intended."
+    },
+    {
+      "rule_id": "POLICY-012",
+      "name": "Protected file change requires approval",
+      "description": "Require approval before changing shared configuration, environment, or security allowlist files.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["write_file"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments",
+            "check": "contains_protected_file_change",
+            "description": "The write touches protected configuration or security-sensitive file content."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Approval required: The write changes protected configuration or security-sensitive content."
+    },
+    {
+      "rule_id": "POLICY-013",
+      "name": "Credentials in public GitHub issue",
+      "description": "Block publishing credential values in public GitHub issues.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["create_github_issue"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.body|arguments.title",
+            "check": "contains_credential_value",
+            "description": "Issue content contains credential-like key/value material."
+          },
+          {
+            "field": "arguments.repo|arguments.repo_visibility",
+            "check": "is_public_repository",
+            "description": "The issue targets a public repository."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "critical",
+      "attack_categories": ["data_exfiltration", "credential_exposure"],
+      "explanation_template": "Blocked: The GitHub issue would publish credential values in a public repository."
+    },
+    {
+      "rule_id": "POLICY-014",
+      "name": "Unrequested sensitive file read",
+      "description": "Block reading sensitive files when the user did not request that exact file.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["read_file"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.file_path|arguments.path",
+            "check": "contains_sensitive_file_path",
+            "description": "The requested path looks like a secret, credential, key, or production config."
+          },
+          {
+            "field": "arguments.file_path|arguments.path",
+            "check": "not_in_user_request",
+            "description": "The sensitive path was not explicitly requested by the user."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "high",
+      "attack_categories": ["data_exfiltration", "unauthorized_action"],
+      "explanation_template": "Blocked: The proposed file read targets a sensitive path the user did not request."
+    },
+    {
+      "rule_id": "POLICY-015",
+      "name": "Broadcast email exceeds recipient scope",
+      "description": "Block broadcast or mailing-list sends when the user requested a narrower reply.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_email"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.to",
+            "check": "is_broadcast_recipient",
+            "description": "The recipient is a broad group or mailing list."
+          },
+          {
+            "field": "arguments.to",
+            "check": "not_in_user_request",
+            "description": "The user did not name that broad recipient."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Blocked: The proposed email targets a broad recipient list that the user did not request."
+    },
+    {
+      "rule_id": "POLICY-016",
+      "name": "Unsafe HTTP method exceeds read-only intent",
+      "description": "Block state-changing HTTP methods when the user requested a read-only action.",
+      "priority": 1,
+      "enabled": true,
+      "tools": ["send_http_request"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.method",
+            "check": "is_state_changing_http_method",
+            "description": "The HTTP method can mutate server state."
+          },
+          {
+            "field": "user_request",
+            "check": "user_request_is_read_only",
+            "description": "The user's request asks only to read, show, fetch, or inspect data."
+          }
+        ]
+      },
+      "decision": "BLOCK",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Blocked: The HTTP method can change server state, but the user's request was read-only."
+    },
+    {
+      "rule_id": "POLICY-017",
+      "name": "External state-changing HTTP requires approval",
+      "description": "Require approval before executing authorized state-changing HTTP requests against external services.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["send_http_request"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.url",
+            "check": "is_external_url",
+            "description": "The URL points outside known internal services."
+          },
+          {
+            "field": "arguments.method",
+            "check": "is_state_changing_http_method",
+            "description": "The HTTP method can mutate server state."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "high",
+      "attack_categories": ["unauthorized_action"],
+      "explanation_template": "Approval required: The HTTP request changes external state at {arguments.url}. Please confirm this is intended."
+    },
+    {
+      "rule_id": "POLICY-018",
+      "name": "External calendar attendee requires approval",
+      "description": "Require approval before inviting external attendees or creating public calendar entries.",
+      "priority": 2,
+      "enabled": true,
+      "tools": ["create_calendar_event"],
+      "conditions": {
+        "operator": "AND",
+        "checks": [
+          {
+            "field": "arguments.attendees|arguments.participants|arguments.visibility",
+            "check": "has_external_participant_or_public",
+            "description": "The event includes external attendees or public visibility."
+          }
+        ]
+      },
+      "decision": "ASK_APPROVAL",
+      "risk_level": "medium",
+      "attack_categories": ["data_exfiltration"],
+      "explanation_template": "Approval required: The calendar event includes external attendees or public visibility."
     }
   ]
 }
