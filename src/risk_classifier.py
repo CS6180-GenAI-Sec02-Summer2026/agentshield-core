@@ -22,19 +22,25 @@ from dataclasses import dataclass, asdict
 
 from src.intent_utils import tool_is_authorized_by_request
 from src.security_patterns import (
-    FILE_CONTENT_INDICATORS,
+    BROADCAST_RECIPIENT_PATTERNS,
     INJECTION_PATTERNS,
     INTERNAL_REFERENCE_PATTERNS,
+    PROTECTED_FILE_CHANGE_PATTERNS,
+    READ_ONLY_REQUEST_PATTERNS,
     SECRET_PATTERNS,
     SENSITIVE_CONTENT_PATTERNS,
+    SENSITIVE_FILE_PATH_PATTERNS,
+    SENSITIVE_SHARING_PATTERNS,
+    STATE_CHANGING_HTTP_METHODS,
 )
 from src.security_text import (
     external_recipients,
     flatten_to_string,
     is_external_target,
+    is_public_repository,
+    matched_credential_values,
     matched_patterns,
 )
-
 
 @dataclass
 class RiskAssessment:
@@ -77,17 +83,25 @@ def detect_data_exfiltration(example: dict) -> tuple[bool, list[str]]:
     factors = []
 
     if tool_name == "send_email":
-        has_file_content = bool(matched_patterns(args_str, FILE_CONTENT_INDICATORS))
+        sensitive_matches = matched_patterns(args_str, SENSITIVE_SHARING_PATTERNS)
         recipient = arguments.get("to", "")
-        external = external_recipients(recipient)
-        if has_file_content and external:
-            factors.append(f"File content detected in email to external recipient(s): {external}")
+        external = external_recipients(recipient, example.get("internal_domains"))
+        if sensitive_matches and external:
+            factors.append(
+                f"Sensitive content ({sensitive_matches}) sent to external recipient(s): {external}"
+            )
 
     if tool_name in ["create_calendar_event", "create_task"]:
         sensitive_matches = matched_patterns(args_str, SENSITIVE_CONTENT_PATTERNS)
+        invitees = []
         participants = arguments.get("participants", [])
+        attendees = arguments.get("attendees", [])
         visibility = arguments.get("visibility", "")
-        external_participants = external_recipients(participants)
+        if isinstance(participants, list):
+            invitees.extend(participants)
+        if isinstance(attendees, list):
+            invitees.extend(attendees)
+        external_participants = external_recipients(invitees, example.get("internal_domains"))
 
         if sensitive_matches and (external_participants or visibility == "public"):
             factors.append(
@@ -97,9 +111,11 @@ def detect_data_exfiltration(example: dict) -> tuple[bool, list[str]]:
 
     if tool_name == "create_github_issue":
         internal_matches = matched_patterns(args_str, INTERNAL_REFERENCE_PATTERNS)
-        repo_visibility = arguments.get("repo_visibility", "private")
-        if internal_matches and repo_visibility == "public":
+        credential_matches = matched_credential_values(arguments)
+        if internal_matches and is_public_repository(arguments):
             factors.append(f"Internal references ({internal_matches}) in public GitHub issue")
+        if credential_matches and is_public_repository(arguments):
+            factors.append(f"Credential values ({credential_matches}) in public GitHub issue")
 
     return bool(factors), factors
 
@@ -111,11 +127,22 @@ def detect_credential_exposure(example: dict) -> tuple[bool, list[str]]:
     arguments = proposed.get("arguments", {})
     args_str = flatten_to_string(arguments)
 
-    if tool_name not in ["send_email", "send_http_request"]:
+    if tool_name not in ["send_email", "send_http_request", "create_github_issue"]:
         return False, []
 
     secret_matches = matched_patterns(args_str, SECRET_PATTERNS)
+    credential_matches = matched_credential_values(arguments)
     if not secret_matches:
+        secret_matches = credential_matches
+    elif credential_matches:
+        secret_matches = sorted(set(secret_matches + credential_matches))
+
+    if not secret_matches:
+        return False, []
+
+    if tool_name == "create_github_issue":
+        if is_public_repository(arguments):
+            return True, [f"Credential patterns ({secret_matches}) being published in a public GitHub issue"]
         return False, []
 
     target = arguments.get("url") or arguments.get("to", "")
@@ -143,10 +170,17 @@ def detect_unauthorized_action(example: dict) -> tuple[bool, list[str]]:
             f"Tool '{tool_name}' does not match user's stated intent: '{example.get('user_request', '')}'"
         )
 
-    if tool_name == "send_http_request":
+    if tool_name == "send_http_request" and not user_intended:
         url = arguments.get("url", "")
         if url and url.lower() not in user_request.lower():
             factors.append(f"Target URL '{url}' was not mentioned in user request")
+
+    if tool_name == "send_http_request":
+        method = str(arguments.get("method", "GET")).upper()
+        request_lower = user_request.lower()
+        request_read_only = any(pattern in request_lower for pattern in READ_ONLY_REQUEST_PATTERNS)
+        if method in STATE_CHANGING_HTTP_METHODS and request_read_only:
+            factors.append(f"HTTP method {method} exceeds read-only user intent")
 
     if tool_name == "delete_file":
         target = arguments.get("file_path") or arguments.get("path") or arguments.get("targets", "unknown")
@@ -155,6 +189,22 @@ def detect_unauthorized_action(example: dict) -> tuple[bool, list[str]]:
     targets = arguments.get("targets", [])
     if isinstance(targets, list) and len(targets) > 1:
         factors.append(f"Bulk operation affecting {len(targets)} resources")
+
+    if tool_name == "write_file":
+        protected_matches = matched_patterns(arguments, PROTECTED_FILE_CHANGE_PATTERNS)
+        if protected_matches:
+            factors.append(f"Protected file change patterns detected: {protected_matches}")
+
+    if tool_name == "read_file":
+        path = arguments.get("file_path") or arguments.get("path") or ""
+        sensitive_path = matched_patterns(path, SENSITIVE_FILE_PATH_PATTERNS)
+        if sensitive_path and str(path).lower() not in user_request.lower():
+            factors.append(f"Sensitive file path was not requested: {path}")
+
+    if tool_name == "send_email":
+        recipient_text = flatten_to_string(arguments.get("to", "")).lower()
+        if any(pattern in recipient_text for pattern in BROADCAST_RECIPIENT_PATTERNS):
+            factors.append(f"Broadcast recipient detected: {recipient_text}")
 
     return bool(factors), factors
 

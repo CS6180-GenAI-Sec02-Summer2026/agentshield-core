@@ -139,6 +139,8 @@ against the supported tool schema before policy and risk evaluation.
 ```
 
 When `dataset_names` is omitted, the backend uses every discoverable dataset.
+With all committed datasets present, that means 94 stored scenarios across the
+demo, sample, dataset v0, red-team, and benign-edge sets.
 
 ## Demo Datasets
 

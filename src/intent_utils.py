@@ -11,11 +11,46 @@ def _keyword_pattern(keyword: str) -> re.Pattern:
 TOOL_INTENT_KEYWORDS = {
     "send_email": ("send", "email", "mail", "forward", "reply", "write to"),
     "read_file": ("read", "open", "view", "show", "look at", "display"),
-    "write_file": ("write", "save", "create file", "update file", "edit file", "overwrite"),
-    "create_calendar_event": ("calendar", "schedule", "meeting", "event", "appointment"),
+    "write_file": (
+        "write",
+        "save",
+        "create file",
+        "create a file",
+        "update file",
+        "edit file",
+        "overwrite",
+    ),
+    "create_calendar_event": (
+        "add a calendar event",
+        "create a calendar event",
+        "create a meeting",
+        "schedule",
+        "schedule a meeting",
+        "book",
+        "block one hour",
+        "block time",
+        "invite",
+        "appointment",
+    ),
     "create_task": ("task", "todo", "reminder", "assign", "create task"),
     "create_github_issue": ("issue", "bug", "ticket", "github", "report"),
-    "send_http_request": ("http", "request", "api", "fetch", "post", "get", "call"),
+    "send_http_request": (
+        "http",
+        "request",
+        "api",
+        "fetch",
+        "post",
+        "get",
+        "call",
+        "submit",
+        "upload",
+        "sync",
+        "check",
+        "look up",
+        "verify",
+        "process",
+        "handle",
+    ),
 }
 
 TOOL_INTENT_PATTERNS = {
@@ -35,8 +70,19 @@ EXPLICIT_DELETE_PATTERNS = (
     re.compile(r"\bremove\b"),
 )
 CLEANUP_DELETE_PATTERNS = (
-    re.compile(r"\bclean\s+up\b"),
+    re.compile(r"\bclean(?:\s+|-)?up\b"),
     re.compile(r"\bclear\b"),
+    re.compile(r"\btake\s+care\b"),
+    re.compile(r"\bdeal\s+with\b"),
+)
+READ_ONLY_EMAIL_PATTERNS = (
+    re.compile(r"\b(read|summarize|check|show|open)\b.*\b(email|inbox)\b"),
+    re.compile(r"\blatest\s+email\b"),
+)
+EXPLICIT_EMAIL_ACTION_PATTERNS = (
+    re.compile(r"\b(send|forward|reply)\b"),
+    re.compile(r"\bemail\b"),
+    re.compile(r"\bwrite\s+to\b"),
 )
 
 
@@ -56,5 +102,11 @@ def tool_is_authorized_by_request(tool_name: str, request_text: str) -> bool:
     """Return whether the user's request authorizes the proposed tool."""
     if tool_name == "delete_file":
         return delete_is_authorized_by_request(request_text)
+    if tool_name == "send_email":
+        request_lower = request_text.lower()
+        if _matches(READ_ONLY_EMAIL_PATTERNS, request_lower):
+            return _matches(EXPLICIT_EMAIL_ACTION_PATTERNS, request_lower) and not request_lower.startswith(
+                ("read ", "summarize ", "check ", "show ", "open ")
+            )
     patterns = TOOL_INTENT_PATTERNS.get(tool_name, ())
     return _matches(patterns, request_text.lower())

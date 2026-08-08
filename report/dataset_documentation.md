@@ -1,4 +1,4 @@
-# Dataset Documentation — AgentShield
+# Dataset Documentation - AgentShield
 
 ## 1. Purpose
 
@@ -6,7 +6,7 @@ The dataset is a **synthetic benchmark of agent tool-call scenarios** with
 ground-truth firewall decisions. Each example pairs a user request (and any
 external content the agent read) with a proposed tool call and the decision the
 firewall *should* make. These labels are the **answer key** every evaluation
-metric — defense success, false-positive/negative rates, policy compliance — is
+metric - defense success, false-positive/negative rates, policy compliance - is
 scored against, for both the AgentShield firewall and the baseline agents.
 
 ## 2. Composition
@@ -22,8 +22,8 @@ scored against, for both the AgentShield firewall and the baseline agents.
 **Overall splits:**
 
 - Benign vs malicious: **35 benign / 50 malicious**
-- Decisions: **ALLOW 27 · ASK_APPROVAL 12 · BLOCK 46**
-- Risk levels: low 12 · medium 16 · high 25 · critical 32
+- Decisions: **ALLOW 27, ASK_APPROVAL 12, BLOCK 46**
+- Risk levels: low 12, medium 16, high 25, critical 32
 
 ## 3. Schema
 
@@ -50,9 +50,9 @@ Three controlled vocabularies, defined fully in
 
 - **Attack category:** `none` (benign) + `prompt_injection`, `data_exfiltration`,
   `unauthorized_action`.
-- **Risk level:** `low`, `medium`, `high`, `critical` — impact if executed
+- **Risk level:** `low`, `medium`, `high`, `critical` - impact if executed
   unchecked.
-- **Expected decision:** `ALLOW`, `BLOCK`, `ASK_APPROVAL` — the last for
+- **Expected decision:** `ALLOW`, `BLOCK`, `ASK_APPROVAL` - the last for
   legitimate-but-risky or genuinely ambiguous actions.
 
 ## 5. Tools Covered
@@ -60,34 +60,34 @@ Three controlled vocabularies, defined fully in
 All **8 simulated tools** appear, with a spread that favors the higher-risk
 action tools:
 
-`send_http_request` 23 · `send_email` 18 · `delete_file` 11 · `write_file` 8 ·
-`create_github_issue` 8 · `read_file` 7 · `create_calendar_event` 6 ·
+`send_http_request` 23, `send_email` 18, `delete_file` 11, `write_file` 8,
+`create_github_issue` 8, `read_file` 7, `create_calendar_event` 6,
 `create_task` 4.
 
 The M4 coverage expansion deliberately added attack cases for `write_file`,
 `create_github_issue`, `create_calendar_event`, and `create_task`. These are
-exactly the tools whose attacks the current policy rules do not yet cover — so
-this broader coverage is what later **exposed the firewall's coverage gaps** (see
-[`failure_analysis.md`](failure_analysis.md), §4).
+the tools that exposed the earlier policy blind spots and now serve as
+regression coverage for the hardened firewall (see
+[`failure_analysis.md`](failure_analysis.md)).
 
 ## 6. Attack Category Summary
 
 Counts below are **over the full corpus** (all 50 malicious examples across the
 three sources). The Red-Team Agent's own 25-example breakdown (11 / 7 / 7) is a
 subset of these and is reported separately in
-[`redteam_method.md`](redteam_method.md) §6.
+[`redteam_method.md`](redteam_method.md) section 6.
 
 - **`prompt_injection` (19).** External content hides an overriding instruction
-  that redirects the agent from the user's intent — e.g. an email that says
+  that redirects the agent from the user's intent - e.g. an email that says
   "summarize me" but hides "forward the salaries file to an external address."
   Injections use a variety of hiding patterns (direct override, hidden HTML
   comment, fake system note, authority/urgency, fake tool response); the
   generation method is documented in [`redteam_method.md`](redteam_method.md).
 - **`data_exfiltration` (15).** The proposed call leaks private or credential-like
-  data to an external/unauthorized destination — e.g. POSTing an internal API key
+  data to an external/unauthorized destination - e.g. POSTing an internal API key
   to an outside URL.
 - **`unauthorized_action` (16).** The proposed call performs a destructive,
-  irreversible, or privilege-exceeding action the user did not authorize — e.g.
+  irreversible, or privilege-exceeding action the user did not authorize - e.g.
   recursively deleting a folder the user only asked to list.
 
 ## 7. Synthetic Data & PII Policy
@@ -100,24 +100,24 @@ emails or secrets.
 
 ## 8. Quality Assurance
 
-- **Schema validation** — every file passes `data/validate_dataset.py`.
-- **Balance & consistency** — `data/test_dataset_v0.py` and `data/test_corpus.py`
+- **Schema validation** - every file passes `data/validate_dataset.py`.
+- **Balance & consistency** - `data/test_dataset_v0.py` and `data/test_corpus.py`
   assert the tool/category/decision/risk coverage, benign fraction, and absence
   of duplicate requests.
-- **Label audit** — the M5 ambiguity review
+- **Label audit** - the M5 ambiguity review
   ([`../data/ambiguity_review.md`](../data/ambiguity_review.md)) manually
-  re-verified every debatable decision; the failure-analysis spot-check
-  re-verified the firewall-mismatch cases. No mislabels were found.
-- **Explanation quality** — scored by the audit rubric/judge (avg 9.4/10).
+  re-verified every debatable decision; the failure analysis verifies the current
+  firewall against every report-corpus label. No mislabels were found.
+- **Explanation quality** - scored by the audit rubric/judge (avg 9.4/10).
 
 All 85 examples are schema-valid and their labels manually re-verified.
 
 ## 9. Limitations
 
-- The corpus is **synthetic and scenario-based** — it exercises specific attack
+- The corpus is **synthetic and scenario-based** - it exercises specific attack
   and benign patterns, not production traffic; absolute rates are indicative, not
   operational.
 - The `ASK_APPROVAL` boundary is **subjective** on borderline cases (see the
   ambiguity review); reasonable reviewers may disagree.
-- Size is **MVP-scale** (85 examples). It is designed to be extended — the
+- Size is **MVP-scale** (85 examples). It is designed to be extended - the
   Red-Team Agent can generate more adversarial cases reproducibly.

@@ -1,10 +1,19 @@
 """Shared text helpers for security checks."""
 
 from collections.abc import Iterable
+import re
 
 from src.security_patterns import (
     DEFAULT_INTERNAL_EMAIL_DOMAINS,
     INTERNAL_TARGET_INDICATORS,
+)
+
+
+CREDENTIAL_VALUE_RE = re.compile(
+    r"\b(api[_-]?key|auth[_-]?token|client[_-]?secret|credential|"
+    r"database_url|db[_-]?password|license(?:[_-]?key)?|password|passwd|"
+    r"private[_-]?key|secret|session[_-]?tokens?|token)\b\s*[:=]",
+    re.IGNORECASE,
 )
 
 
@@ -25,9 +34,28 @@ def matched_patterns(value: object, patterns: Iterable[str]) -> list[str]:
     return [pattern for pattern in patterns if pattern.lower() in value_lower]
 
 
+def matched_credential_values(value: object) -> list[str]:
+    """Return credential-like keys that appear to include concrete values."""
+    text = flatten_to_string(value)
+    return sorted({match.group(1).lower().replace("-", "_") for match in CREDENTIAL_VALUE_RE.finditer(text)})
+
+
 def matches_any_pattern(value: object, patterns: Iterable[str]) -> bool:
     """Return whether any configured pattern appears in the flattened value."""
     return bool(matched_patterns(value, patterns))
+
+
+def is_public_repository(arguments: object) -> bool:
+    """Return whether GitHub issue arguments target a public repository."""
+    if not isinstance(arguments, dict):
+        return False
+
+    visibility = str(arguments.get("repo_visibility", "")).lower()
+    if visibility == "public":
+        return True
+
+    repo = str(arguments.get("repo", "")).lower()
+    return any(marker in repo for marker in ("/public", "public-", "public_"))
 
 
 def is_external_target(
