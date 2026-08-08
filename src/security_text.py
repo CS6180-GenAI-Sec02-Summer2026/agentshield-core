@@ -29,9 +29,18 @@ def flatten_to_string(value: object) -> str:
 
 
 def matched_patterns(value: object, patterns: Iterable[str]) -> list[str]:
-    """Return configured patterns found in the flattened value."""
+    """Return unique configured patterns found in the flattened value."""
     value_lower = flatten_to_string(value).lower()
-    return [pattern for pattern in patterns if pattern.lower() in value_lower]
+    found = []
+    seen = set()
+    for pattern in patterns:
+        pattern_lower = pattern.lower()
+        if pattern_lower in seen:
+            continue
+        seen.add(pattern_lower)
+        if pattern_lower in value_lower:
+            found.append(pattern)
+    return found
 
 
 def matched_credential_values(value: object) -> list[str]:
