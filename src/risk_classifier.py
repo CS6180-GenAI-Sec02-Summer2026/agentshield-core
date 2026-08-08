@@ -20,13 +20,12 @@ Risk Categories:
 
 from dataclasses import dataclass, asdict
 
-from src.intent_utils import tool_is_authorized_by_request
+from src.intent_utils import request_is_read_only, tool_is_authorized_by_request
 from src.security_patterns import (
     BROADCAST_RECIPIENT_PATTERNS,
     INJECTION_PATTERNS,
     INTERNAL_REFERENCE_PATTERNS,
     PROTECTED_FILE_CHANGE_PATTERNS,
-    READ_ONLY_REQUEST_PATTERNS,
     SECRET_PATTERNS,
     SENSITIVE_CONTENT_PATTERNS,
     SENSITIVE_FILE_PATH_PATTERNS,
@@ -177,9 +176,7 @@ def detect_unauthorized_action(example: dict) -> tuple[bool, list[str]]:
 
     if tool_name == "send_http_request":
         method = str(arguments.get("method", "GET")).upper()
-        request_lower = user_request.lower()
-        request_read_only = any(pattern in request_lower for pattern in READ_ONLY_REQUEST_PATTERNS)
-        if method in STATE_CHANGING_HTTP_METHODS and request_read_only:
+        if method in STATE_CHANGING_HTTP_METHODS and request_is_read_only(user_request):
             factors.append(f"HTTP method {method} exceeds read-only user intent")
 
     if tool_name == "delete_file":

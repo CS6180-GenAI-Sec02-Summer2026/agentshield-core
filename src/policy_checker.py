@@ -24,14 +24,13 @@ import json
 from dataclasses import dataclass, asdict
 from pathlib import Path
 
-from src.intent_utils import tool_is_authorized_by_request
+from src.intent_utils import request_is_read_only, tool_is_authorized_by_request
 from src.security_patterns import (
     BROADCAST_RECIPIENT_PATTERNS,
     FILE_CONTENT_INDICATORS,
     INJECTION_PATTERNS,
     INTERNAL_REFERENCE_PATTERNS,
     PROTECTED_FILE_CHANGE_PATTERNS,
-    READ_ONLY_REQUEST_PATTERNS,
     SECRET_PATTERNS,
     SENSITIVE_CONTENT_PATTERNS,
     SENSITIVE_FILE_PATH_PATTERNS,
@@ -212,8 +211,7 @@ class PolicyChecker:
             return matched, f"HTTP method {method} {'changes state' if matched else 'is read-only'}"
 
         elif check_type == "user_request_is_read_only":
-            request_lower = user_request.lower()
-            matched = any(pattern in request_lower for pattern in READ_ONLY_REQUEST_PATTERNS)
+            matched = request_is_read_only(user_request)
             return matched, "User request is read-only" if matched else "User request is not read-only"
 
         elif check_type == "contains_sensitive_content":

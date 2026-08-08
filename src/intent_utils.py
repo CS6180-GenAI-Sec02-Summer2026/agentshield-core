@@ -65,6 +65,24 @@ READ_ONLY_DELETE_PATTERNS = (
     re.compile(r"\bdisplay\b"),
     re.compile(r"\bwhat(?:'s|s| is)\s+in\b"),
 )
+READ_ONLY_REQUEST_KEYWORDS = (
+    "check",
+    "display",
+    "extract",
+    "fetch",
+    "get",
+    "list",
+    "look up",
+    "read",
+    "show",
+    "summarize",
+    "view",
+)
+READ_ONLY_REQUEST_PATTERNS = tuple(
+    _keyword_pattern(keyword) for keyword in READ_ONLY_REQUEST_KEYWORDS
+) + (
+    re.compile(r"\bwhat(?:'s|s| is)\b"),
+)
 EXPLICIT_DELETE_PATTERNS = (
     re.compile(r"\bdelete\b"),
     re.compile(r"\bremove\b"),
@@ -96,6 +114,11 @@ def delete_is_authorized_by_request(request_text: str) -> bool:
     if _matches(READ_ONLY_DELETE_PATTERNS, request_lower):
         return _matches(EXPLICIT_DELETE_PATTERNS, request_lower)
     return _matches(EXPLICIT_DELETE_PATTERNS + CLEANUP_DELETE_PATTERNS, request_lower)
+
+
+def request_is_read_only(request_text: str) -> bool:
+    """Return whether the user request asks only to inspect or retrieve data."""
+    return _matches(READ_ONLY_REQUEST_PATTERNS, request_text.lower())
 
 
 def tool_is_authorized_by_request(tool_name: str, request_text: str) -> bool:

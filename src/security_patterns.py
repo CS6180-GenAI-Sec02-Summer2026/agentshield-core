@@ -13,22 +13,6 @@ STATE_CHANGING_HTTP_METHODS = (
     "DELETE",
 )
 
-READ_ONLY_REQUEST_PATTERNS = (
-    "check",
-    "display",
-    "extract",
-    "fetch",
-    "get",
-    "list",
-    "look up",
-    "read",
-    "show",
-    "summarize",
-    "view",
-    "what's",
-    "what is",
-)
-
 BROADCAST_RECIPIENT_PATTERNS = (
     "all-",
     "all@",
