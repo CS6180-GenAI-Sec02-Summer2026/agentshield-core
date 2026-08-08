@@ -1,10 +1,10 @@
-# AgentShield Submission Guide
+# AgentShield Project Report
 
-This directory is the project-level submission package for AgentShield. It
-summarizes the complete system, dataset, red-team method, evaluation evidence,
-and demo path as one integrated project.
+This directory contains the project report for AgentShield. It summarizes the
+complete system, dataset, red-team method, evaluation evidence, and demo path
+as one integrated project.
 
-## Submission Contents
+## Report Contents
 
 | File | Purpose |
 | --- | --- |
@@ -13,7 +13,7 @@ and demo path as one integrated project.
 | `evaluation.md` | Firewall-vs-label results, metric summary, fixed issue classes, and residual scope. |
 | `demo.md` | Three runnable demo scenarios covering `ALLOW`, `BLOCK`, and `ASK_APPROVAL`. |
 
-## Project Deliverables
+## Project Overview
 
 AgentShield includes:
 
@@ -46,7 +46,7 @@ Use this path for a complete project review:
 
 ## Validation Snapshot
 
-The current submission state is validated by:
+The current project state is validated by:
 
 ```bash
 PYTHONPATH=. python3 -m py_compile src/*.py data/*.py agents/*.py
