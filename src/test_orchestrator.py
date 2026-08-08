@@ -1,4 +1,4 @@
-"""Focused tests for Mrinal-owned orchestration/API integration layer."""
+"""Focused tests for the orchestration and API integration layer."""
 
 from pathlib import Path
 

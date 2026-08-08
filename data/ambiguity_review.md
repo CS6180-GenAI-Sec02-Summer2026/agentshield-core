@@ -1,4 +1,4 @@
-# Ambiguity Review (M5-S2)
+# Ambiguity Review
 
 Manual review of the examples flagged by
 [`quality_report.py`](quality_report.py) as having a debatable

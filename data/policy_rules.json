@@ -72,7 +72,7 @@
               "token", "access_token", "auth_token",
               "private_key", "credential",
               "license", "license_key",
-              "AWS_SECRET", "OPENAI_API_KEY",
+              "AWS_SECRET", "MODEL_API_KEY",
               "DATABASE_URL", "CONNECTION_STRING"
             ],
             "description": "Tool call arguments contain patterns matching secrets or credentials."

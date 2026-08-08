@@ -1,4 +1,4 @@
-"""Tests that the injection-pattern library is well-formed (M3-S2)."""
+"""Tests that the injection-pattern library is well formed."""
 
 import sys
 

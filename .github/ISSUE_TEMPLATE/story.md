@@ -1,6 +1,6 @@
 ---
 name: Story
-about: Major weekly outcome owned by one teammate
+about: Project outcome or feature area
 title: "[STORY] "
 labels: story
 assignees: ''
@@ -8,9 +8,8 @@ assignees: ''
 
 ## Story
 
-**Owner:**
-**Target milestone:**
 **Repository:**
+**Area:**
 
 ## Description
 

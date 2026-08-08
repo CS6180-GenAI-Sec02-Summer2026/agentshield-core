@@ -1,8 +1,8 @@
-"""Generate data/red_team_examples.json from the red-team seeds (M3-S2).
+"""Generate data/red_team_examples.json from the red-team seeds.
 
 This makes the adversarial dataset reproducible: re-running regenerates the same
 schema-valid examples from the deterministic seeds. Kept separate from
-data/dataset_v0.json so the verified M2 dataset stays stable.
+data/dataset_v0.json so the verified baseline dataset stays stable.
 
 Usage:
     python agents/generate_red_team.py

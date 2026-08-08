@@ -37,7 +37,7 @@ example carries a stable `id` (`v0-*`, `rt-*`, `be-*`) for scenario lookup.
 The runtime dataset loader also discovers `demo_scenarios.json` and
 `sample_examples.json`. With all committed files present, API metrics and
 baseline endpoints evaluate 94 stored scenarios total: 3 demo, 6 sample, and the
-85-example report corpus described below.
+85-example evaluation corpus described below.
 
 ## Example Schema
 
@@ -164,7 +164,7 @@ python agents/judge_vs_manual.py   # judge vs manual agreement
 ```
 
 On the corpus the judge averages 9.4/10; see the
-[audit judge](../agents/README.md#audit-judge-m5-s2).
+[audit judge](../agents/README.md#audit-judge).
 
 ## Synthetic Data Boundary
 

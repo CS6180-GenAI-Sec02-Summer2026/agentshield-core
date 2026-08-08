@@ -8,9 +8,8 @@ assignees: ''
 
 ## Task
 
-**Parent story:**
-**Owner:**
-**Branch:**
+**Area:**
+**Target branch:**
 
 ## Description
 
@@ -27,4 +26,4 @@ Describe the specific implementation, documentation, or validation work.
 - [ ] Code or documentation complete
 - [ ] Relevant tests and validation commands passing
 - [ ] Documentation or markdown updated when behavior changes
-- [ ] Reviewed by at least one teammate
+- [ ] Ready for review

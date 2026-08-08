@@ -1,4 +1,4 @@
-# Audit Explanation Rubric (M5-S2)
+# Audit Explanation Rubric
 
 This rubric scores the **quality of an audit explanation** - the short
 justification attached to a firewall decision (the `explanation` field on a

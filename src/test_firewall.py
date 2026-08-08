@@ -71,7 +71,7 @@ TEST_CASES = [
             "arguments": {
                 "title": "Review PR #42",
                 "body": "Review and approve the auth module PR.",
-                "assignee": "yashas@company.example",
+                "assignee": "reviewer@company.example",
             },
         },
         "expected_decision": "ALLOW",

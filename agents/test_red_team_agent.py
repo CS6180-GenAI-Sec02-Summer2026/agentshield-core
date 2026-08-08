@@ -1,6 +1,6 @@
-"""Tests for the Red-Team Agent and its generated adversarial examples (M3-S2).
+"""Tests for the red-team generator and its adversarial examples.
 
-Guards the M3-S2 bug items:
+Guards the red-team generator risks:
   * attack examples too obvious   -> diversity heuristics
   * attack labels inconsistent    -> label-consistency checks
   * generated text contains real PII / real secrets -> synthetic-only scan

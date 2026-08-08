@@ -40,8 +40,9 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 | `src/metrics.py` | Security, usability, and accuracy metrics. |
 | `src/policy_compiler_agent.py` | Markdown policy compiler for structured rule exports. |
 | `src/label_validator.py` | Dataset label consistency checker. |
+| `agents/` | Deterministic red-team generation and audit-quality utilities. |
 | `data/` | Synthetic scenarios, schema, policy rules, audit logs, and exports. |
-| `docs/` | Architecture, API contract, policies, rule format, and metrics docs. |
+| `docs/` | Architecture, API contract, policies, rule format, metrics, and submission docs. |
 
 ## Setup
 
@@ -137,4 +138,6 @@ git diff --check
 - `docs/safety_policies.md` - human-readable safety policies.
 - `docs/policy_rule_format.md` - compiled rule format.
 - `docs/evaluation_metrics.md` - metrics definitions and formulas.
+- `docs/submission/README.md` - project-level submission guide and report index.
 - `data/README.md` - dataset schema, labels, validation, and safety notes.
+- `agents/README.md` - red-team generation and audit-quality utility guide.

@@ -1,4 +1,4 @@
-"""Tests for the audit judge and its rubric scoring (M5-S2).
+"""Tests for the audit judge and its rubric scoring.
 
 Guards the bug item "judge over-scores weak explanations" and confirms the
 corpus explanations are high quality and the on-disk report stays in sync.

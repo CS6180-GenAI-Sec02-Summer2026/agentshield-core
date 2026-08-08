@@ -515,7 +515,7 @@ def test_baseline_comparison():
 
 def main():
     print("=" * 70)
-    print("AGENTSHIELD M5 METRICS TEST SUITE")
+    print("AGENTSHIELD METRICS TEST SUITE")
     print("=" * 70)
 
     all_passed = True

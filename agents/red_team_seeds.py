@@ -1,7 +1,7 @@
-"""Scenario seeds for the Red-Team Agent (M3-S2).
+"""Scenario seeds for the red-team generator.
 
 Each function returns a list of ScenarioSeed objects grouped by the tool the
-attack targets. The Red-Team Agent expands these into schema-valid adversarial
+attack targets. The red-team generator expands these into schema-valid adversarial
 examples. All content is synthetic: *.example domains and
 <synthetic-...-placeholder> tokens only.
 
@@ -409,7 +409,7 @@ def mixed_seeds() -> list[ScenarioSeed]:
 
 def tool_coverage_seeds() -> list[ScenarioSeed]:
     """Attacks that extend adversarial coverage to the calendar, task, and
-    GitHub-issue tools (M4-S2), so all eight tools have attack examples."""
+    GitHub-issue tools so all eight tools have attack examples."""
     return [
         # 1. github issue -> data_exfiltration: publish prod credentials publicly
         ScenarioSeed(

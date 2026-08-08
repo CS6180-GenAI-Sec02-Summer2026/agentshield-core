@@ -1,13 +1,12 @@
-"""Red-Team Agent for AgentShield (M3-S2).
+"""Red-team generator for AgentShield.
 
 Generates synthetic adversarial tool-call examples that conform to
-data/dataset_schema.json. The agent is GenAI-driven in spirit but is built to
-be reproducible and testable WITHOUT an API key:
+data/dataset_schema.json. The generator is built to be reproducible and
+testable without an API key:
 
   * offline (DEFAULT): deterministic template-fill using the injection-pattern
     library. No network, no API key. Used by all tests.
-  * online (optional, wired in a later step): calls the Claude API to generate
-    richer attacks, degrading gracefully when unavailable.
+  * online (reserved extension point): currently raises NotImplementedError.
 
 A ScenarioSeed captures the deterministic inputs for one example; the agent
 assembles them into a schema-valid dict. All content is synthetic: use
@@ -89,7 +88,7 @@ class RedTeamAgent:
 
 
 def _demo_seed() -> ScenarioSeed:
-    """A single prompt-injection email attack, used for the Step 2 demo."""
+    """A single prompt-injection email attack for local smoke testing."""
     return ScenarioSeed(
         tool_name="send_email",
         arguments={

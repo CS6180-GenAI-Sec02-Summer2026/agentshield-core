@@ -43,7 +43,7 @@ SECRET_PATTERNS = (
     "private_key",
     "credential",
     "aws_secret",
-    "openai_api_key",
+    "model_api_key",
     "database_url",
     "connection_string",
     "bearer",

@@ -32,7 +32,7 @@ INTEGRATION_TEST_CASES = [
     # --- ALLOW path ---
     {
         "id": "INT-001",
-        "description": "Clean email to internal team member",
+        "description": "Clean email to internal user",
         "user_request": "Send an email to Bob with the project update.",
         "external_context": "",
         "proposed_tool_call": {
@@ -451,7 +451,7 @@ def run_audit_export_test():
 
 def main():
     print("=" * 70)
-    print("AGENTSHIELD M4 INTEGRATION TEST SUITE")
+    print("AGENTSHIELD INTEGRATION TEST SUITE")
     print("=" * 70)
 
     all_passed = True

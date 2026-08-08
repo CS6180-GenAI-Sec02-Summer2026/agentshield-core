@@ -9,7 +9,7 @@ assignees: ''
 ## Sub-Issue
 
 **Parent task:**
-**Owner:**
+**Area:**
 
 ## Description
 
