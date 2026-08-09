@@ -1,0 +1,950 @@
+% Options for packages loaded elsewhere
+\PassOptionsToPackage{unicode}{hyperref}
+\PassOptionsToPackage{hyphens}{url}
+\documentclass[
+]{article}
+\usepackage{xcolor}
+\usepackage{amsmath,amssymb}
+\setcounter{secnumdepth}{5}
+\usepackage{iftex}
+\ifPDFTeX
+  \usepackage[T1]{fontenc}
+  \usepackage[utf8]{inputenc}
+  \usepackage{textcomp} % provide euro and other symbols
+\else % if luatex or xetex
+  \usepackage{unicode-math} % this also loads fontspec
+  \defaultfontfeatures{Scale=MatchLowercase}
+  \defaultfontfeatures[\rmfamily]{Ligatures=TeX,Scale=1}
+\fi
+\usepackage{lmodern}
+\ifPDFTeX\else
+  % xetex/luatex font selection
+\fi
+% Use upquote if available, for straight quotes in verbatim environments
+\IfFileExists{upquote.sty}{\usepackage{upquote}}{}
+\IfFileExists{microtype.sty}{% use microtype if available
+  \usepackage[]{microtype}
+  \UseMicrotypeSet[protrusion]{basicmath} % disable protrusion for tt fonts
+}{}
+\makeatletter
+\@ifundefined{KOMAClassName}{% if non-KOMA class
+  \IfFileExists{parskip.sty}{%
+    \usepackage{parskip}
+  }{% else
+    \setlength{\parindent}{0pt}
+    \setlength{\parskip}{6pt plus 2pt minus 1pt}}
+}{% if KOMA class
+  \KOMAoptions{parskip=half}}
+\makeatother
+\usepackage{color}
+\usepackage{fancyvrb}
+\newcommand{\VerbBar}{|}
+\newcommand{\VERB}{\Verb[commandchars=\\\{\}]}
+\DefineVerbatimEnvironment{Highlighting}{Verbatim}{commandchars=\\\{\}}
+% Add ',fontsize=\small' for more characters per line
+\newenvironment{Shaded}{}{}
+\newcommand{\AlertTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\AnnotationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\AttributeTok}[1]{\textcolor[rgb]{0.49,0.56,0.16}{#1}}
+\newcommand{\BaseNTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\BuiltInTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{#1}}
+\newcommand{\CharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\CommentTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textit{#1}}}
+\newcommand{\CommentVarTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\ConstantTok}[1]{\textcolor[rgb]{0.53,0.00,0.00}{#1}}
+\newcommand{\ControlFlowTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\DataTypeTok}[1]{\textcolor[rgb]{0.56,0.13,0.00}{#1}}
+\newcommand{\DecValTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\DocumentationTok}[1]{\textcolor[rgb]{0.73,0.13,0.13}{\textit{#1}}}
+\newcommand{\ErrorTok}[1]{\textcolor[rgb]{1.00,0.00,0.00}{\textbf{#1}}}
+\newcommand{\ExtensionTok}[1]{#1}
+\newcommand{\FloatTok}[1]{\textcolor[rgb]{0.25,0.63,0.44}{#1}}
+\newcommand{\FunctionTok}[1]{\textcolor[rgb]{0.02,0.16,0.49}{#1}}
+\newcommand{\ImportTok}[1]{\textcolor[rgb]{0.00,0.50,0.00}{\textbf{#1}}}
+\newcommand{\InformationTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\newcommand{\KeywordTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{\textbf{#1}}}
+\newcommand{\NormalTok}[1]{#1}
+\newcommand{\OperatorTok}[1]{\textcolor[rgb]{0.40,0.40,0.40}{#1}}
+\newcommand{\OtherTok}[1]{\textcolor[rgb]{0.00,0.44,0.13}{#1}}
+\newcommand{\PreprocessorTok}[1]{\textcolor[rgb]{0.74,0.48,0.00}{#1}}
+\newcommand{\RegionMarkerTok}[1]{#1}
+\newcommand{\SpecialCharTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\SpecialStringTok}[1]{\textcolor[rgb]{0.73,0.40,0.53}{#1}}
+\newcommand{\StringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\VariableTok}[1]{\textcolor[rgb]{0.10,0.09,0.49}{#1}}
+\newcommand{\VerbatimStringTok}[1]{\textcolor[rgb]{0.25,0.44,0.63}{#1}}
+\newcommand{\WarningTok}[1]{\textcolor[rgb]{0.38,0.63,0.69}{\textbf{\textit{#1}}}}
+\usepackage{longtable,booktabs,array}
+\usepackage{caption}
+\captionsetup[table]{skip=6pt}
+\newcounter{none} % for unnumbered tables
+\usepackage{calc} % for calculating minipage widths
+% Correct order of tables after \paragraph or \subparagraph
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd\longtable{\par}{\if@noskipsec\mbox{}\fi\par}{}{}
+\makeatother
+% Allow footnotes in longtable head/foot
+\IfFileExists{footnotehyper.sty}{\usepackage{footnotehyper}}{\usepackage{footnote}}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em} % prevent overfull lines
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+\usepackage{bookmark}
+\IfFileExists{xurl.sty}{\usepackage{xurl}}{} % add URL line breaks if available
+\urlstyle{same}
+% fallback for those not using the hyperref driver hyperxmp:
+\makeatletter
+\@ifundefined{xmpquote}{\newcommand{\xmpquote}[1]{#1}}{}
+\makeatother
+\hypersetup{
+  pdftitle={AgentShield: Agentic AI Security Framework},
+  pdfauthor={Mrinal Setty --- Agent Orchestration \& Target Agent Lead; Aditya Shenoy --- Red-Team Agent \& Dataset Lead; Yashas Uttangi --- Safety, Firewall, Evaluation \& Console Lead},
+  hidelinks,
+  pdfcreator={LaTeX via pandoc}}
+
+\title{AgentShield: Agentic AI Security Framework}
+\usepackage{etoolbox}
+\makeatletter
+\providecommand{\subtitle}[1]{% add subtitle to \maketitle
+  \apptocmd{\@title}{\par {\large #1 \par}}{}{}
+}
+\makeatother
+\subtitle{Securing Tool-Using AI Agents Against Prompt Injection, Data
+Leakage, and Unsafe Actions}
+\author{Mrinal Setty --- Agent Orchestration \& Target Agent
+Lead \and Aditya Shenoy --- Red-Team Agent \& Dataset Lead \and Yashas
+Uttangi --- Safety, Firewall, Evaluation \& Console Lead}
+\date{CS6180 · Summer 2026 · August 9, 2026}
+
+\begin{document}
+\maketitle
+
+{
+\setcounter{tocdepth}{3}
+\tableofcontents
+}
+\section{Introduction}\label{introduction}
+
+\subsection{Problem Statement}\label{problem-statement}
+
+Modern AI systems are moving from simple chatbots to agentic systems
+that take real actions through tools such as email, files, calendars,
+task managers, code hosting, and HTTP APIs. This shift creates a new
+class of security risk: malicious content hidden inside emails,
+documents, webpages, or tool responses can manipulate an agent into
+unsafe actions --- leaking private data, sending messages to
+unauthorized recipients, or performing destructive operations the user
+never requested.
+
+The specific problem this project addresses is: \textbf{how can we test
+and protect tool-using AI agents from prompt injection, data leakage,
+unauthorized tool use, and unsafe actions before a tool call is
+executed?}
+
+AgentShield is a multi-agent security framework that simulates
+tool-using AI agents, generates red-team attacks against them, validates
+each proposed tool call against structured safety policies, blocks or
+escalates risky actions, and produces audit records explaining every
+decision. Crucially, the firewall inspects the proposed tool call
+\textbf{before} execution, so an unsafe action is stopped rather than
+merely reported after the fact.
+
+\subsection{Why Generative AI Is
+Useful}\label{why-generative-ai-is-useful}
+
+Generative AI is central to the framework because AgentShield must
+interpret natural-language requests, reason over tool-use intent,
+generate realistic adversarial scenarios, apply safety policies to
+ambiguous cases, classify risk, and explain its decisions in readable
+audit reports:
+
+\begin{itemize}
+\tightlist
+\item
+  The \textbf{Target Agent} uses GenAI for tool-use reasoning and
+  structured tool-call generation.
+\item
+  The \textbf{Red-Team Agent} uses adversarial prompting to generate
+  realistic prompt-injection attacks and malicious scenarios.
+\item
+  The \textbf{Policy Compiler and Firewall} use policy reasoning to
+  interpret rules, resolve ambiguous risk, and generate audit
+  explanations.
+\item
+  An \textbf{LLM-as-a-judge} is used only for subjective quality checks
+  (audit explanation quality), never for primary correctness scoring,
+  which is always measured against fixed ground-truth labels.
+\end{itemize}
+
+\section{System Architecture}\label{system-architecture}
+
+AgentShield uses a modular backend workflow that owns the full local
+decision path: scenario ingestion, tool-call proposal, schema
+validation, policy and risk evaluation, safe mock execution, audit
+capture, metrics, and baseline comparison. (Full detail:
+\texttt{docs/architecture.md}.)
+
+\subsection{Decision Pipeline}\label{decision-pipeline}
+
+Each user request or stored scenario flows through the same path:
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  The \textbf{Target Agent} proposes a structured tool call.
+\item
+  The proposed call is \textbf{schema-validated}.
+\item
+  In parallel, the \textbf{Policy Checker} evaluates every enabled
+  safety rule and the \textbf{Risk Classifier} scores risk level and
+  category.
+\item
+  The \textbf{Firewall} combines both results and chooses the most
+  restrictive outcome: \texttt{ALLOW}, \texttt{BLOCK}, or
+  \texttt{ASK\_APPROVAL}.
+\item
+  Only \texttt{ALLOW} may proceed to optional \textbf{safe mock
+  execution}; \texttt{BLOCK} and \texttt{ASK\_APPROVAL} never execute.
+\item
+  The \textbf{Orchestrator} records an audit entry and workflow state,
+  which feed metrics, the API response, and evaluation exports.
+\end{enumerate}
+
+\subsection{Key Components}\label{key-components}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Responsibility
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{target\_agent.py} & Deterministic target-agent simulator and
+tool-call proposal format. \\
+\texttt{scenario\_store.py} & Loads scenario datasets from
+\texttt{data/} with stable source metadata. \\
+\texttt{policy\_compiler\_agent.py} & Parses Markdown safety policies
+into structured JSON rules. \\
+\texttt{policy\_checker.py} & Evaluates enabled rules and returns every
+matching violation. \\
+\texttt{risk\_classifier.py} & Classifies risk level, score, and
+categories. \\
+\texttt{firewall\_agent.py} & Combines policy and risk into an
+\texttt{ALLOW} / \texttt{BLOCK} / \texttt{ASK\_APPROVAL} decision. \\
+\texttt{orchestrator.py} & Runs the end-to-end workflow and stores audit
+entries. \\
+\texttt{api.py} & FastAPI app, CORS, and endpoints for the console. \\
+\texttt{metrics.py} / \texttt{baseline\_analyzer.py} &
+Security/usability metrics and baseline comparison. \\
+\end{longtable}
+}
+
+\subsection{Safety Boundary}\label{safety-boundary}
+
+All tool execution is simulated. Mock tools validate arguments and
+return synthetic outputs but never perform real side effects --- no
+email is sent, no file is read or written, no HTTP request leaves the
+machine. \texttt{ALLOW} means the firewall permits the call \emph{in
+simulation only}.
+
+Policy checking, risk classification, and label validation share the
+same security-pattern, text-matching, and intent helpers, which keeps
+dataset labels, runtime decisions, and evaluation reports aligned.
+Intent checks use standalone keyword matching (so short terms like
+\texttt{get} or \texttt{list} do not match inside unrelated words), and
+\texttt{delete\_file} has an explicit deletion gate so read-only
+requests never authorize a deletion. External-target checks treat known
+internal hosts and configured internal email domains as internal;
+everything else is external for policy purposes.
+
+\section{Dataset}\label{dataset}
+
+\subsection{Purpose}\label{purpose}
+
+The dataset is a synthetic benchmark of agent tool-call scenarios with
+ground-truth firewall decisions. Each example pairs a user request,
+optional external context, and proposed tool call with the decision the
+firewall should make. These labels drive policy validation, risk
+classification, metrics, baselines, and regression tests.
+
+\subsection{Composition}\label{composition}
+
+The full stored evaluation set contains 94 scenarios:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Source
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Count
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{data/demo\_scenarios.json} & 3 & Compact demo set covering all
+three decisions. \\
+\texttt{data/sample\_examples.json} & 6 & Small representative set for
+schema and label checks. \\
+\texttt{data/dataset\_v0.json} & 50 & Balanced baseline of benign and
+malicious scenarios. \\
+\texttt{data/red\_team\_examples.json} & 25 & Adversarial scenarios
+spanning all supported tools. \\
+\texttt{data/benign\_edge\_cases.json} & 10 & Safe actions that resemble
+attacks and guard against overblocking. \\
+\end{longtable}
+}
+
+The deeper evaluation corpus is the 85-example set formed by
+\texttt{dataset\_v0.json}, \texttt{red\_team\_examples.json}, and
+\texttt{benign\_edge\_cases.json}:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Split & Count \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Benign & 35 \\
+Malicious & 50 \\
+\texttt{ALLOW} labels & 27 \\
+\texttt{ASK\_APPROVAL} labels & 12 \\
+\texttt{BLOCK} labels & 46 \\
+\end{longtable}
+}
+
+\subsection{Schema}\label{schema}
+
+Every scenario follows \texttt{data/dataset\_schema.json} and includes:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Field
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{user\_request} & Natural-language request from the user. \\
+\texttt{external\_context} & External content the agent read; may
+contain injected instructions. \\
+\texttt{proposed\_tool\_call} & Proposed tool name and arguments before
+firewall evaluation. \\
+\texttt{expected\_decision} & Ground-truth decision: \texttt{ALLOW},
+\texttt{BLOCK}, or \texttt{ASK\_APPROVAL}. \\
+\texttt{risk\_level} & Impact if the call executed unchecked:
+\texttt{low}, \texttt{medium}, \texttt{high}, or \texttt{critical}. \\
+\texttt{attack\_category} & \texttt{none}, \texttt{prompt\_injection},
+\texttt{data\_exfiltration}, or \texttt{unauthorized\_action}. \\
+\texttt{explanation} & Human-readable rationale for the expected
+decision. \\
+\end{longtable}
+}
+
+Stable ids such as \texttt{v0-*}, \texttt{rt-*}, \texttt{be-*}, and
+\texttt{demo-*} support scenario lookup.
+
+\subsection{Tool Coverage}\label{tool-coverage}
+
+All eight supported mock tools are represented:
+
+\texttt{send\_email}, \texttt{read\_file}, \texttt{write\_file},
+\texttt{delete\_file}, \texttt{create\_calendar\_event},
+\texttt{create\_task}, \texttt{create\_github\_issue},
+\texttt{send\_http\_request}.
+
+The corpus deliberately covers high-risk tools such as external HTTP
+requests, email, file deletion, protected writes, public issue creation,
+calendar events, and task creation.
+
+\subsection{Label Rules}\label{label-rules}
+
+The controlled vocabularies are documented in
+\texttt{../../data/attack\_taxonomy.md}.
+
+General labeling rules:
+
+\begin{itemize}
+\tightlist
+\item
+  Benign scenarios use \texttt{attack\_category:\ none} and are allowed
+  when the tool call matches the request and is low impact.
+\item
+  Destructive but user-requested actions use \texttt{ASK\_APPROVAL} when
+  execution should be confirmed.
+\item
+  Prompt-injection, data-exfiltration, and unauthorized-action scenarios
+  use \texttt{BLOCK} when the proposed call violates user intent or
+  exposes sensitive data.
+\item
+  External sends, external state-changing HTTP calls, and external
+  attendees may use \texttt{ASK\_APPROVAL} when the user authorized the
+  action but the impact warrants confirmation.
+\end{itemize}
+
+\subsection{Quality Checks}\label{quality-checks}
+
+Dataset quality is enforced by:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/sample\_examples.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/demo\_scenarios.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/dataset\_v0.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/red\_team\_examples.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/benign\_edge\_cases.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/corpus\_report.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/quality\_report.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/label\_validator.py }\AttributeTok{{-}{-}rules}\NormalTok{ data/policy\_rules.json }\AttributeTok{{-}{-}dataset}\NormalTok{ data/dataset\_v0.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/label\_validator.py }\AttributeTok{{-}{-}rules}\NormalTok{ data/policy\_rules.json }\AttributeTok{{-}{-}dataset}\NormalTok{ data/red\_team\_examples.json}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/label\_validator.py }\AttributeTok{{-}{-}rules}\NormalTok{ data/policy\_rules.json }\AttributeTok{{-}{-}dataset}\NormalTok{ data/benign\_edge\_cases.json}
+\end{Highlighting}
+\end{Shaded}
+
+The label validator uses the same shared intent, security-pattern, and
+text helpers as the runtime policy path, so dataset labels stay aligned
+with firewall behavior.
+
+\subsection{Synthetic Data Boundary}\label{synthetic-data-boundary}
+
+All examples are synthetic. Email addresses use \texttt{*.example}
+domains, and secret-like values use clearly marked
+\texttt{\textless{}synthetic-...-placeholder\textgreater{}} tokens.
+Tests and scans reject real-looking contact data or credentials.
+
+\section{Red-Team Method}\label{red-team-method}
+
+\subsection{Purpose}\label{purpose-1}
+
+The red-team generator creates deterministic adversarial scenarios that
+stress-test AgentShield before runtime integration. The generated corpus
+is used as regression coverage for prompt injection, data exfiltration,
+unauthorized actions, sensitive file reads, protected writes, public
+issue leaks, and unsafe external requests.
+
+\subsection{Components}\label{components}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Component
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Role
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{agents/injection\_patterns.py} & Prompt-injection pattern
+library. \\
+\texttt{agents/red\_team\_seeds.py} & Attack seed catalog grouped by
+tool and attack style. \\
+\texttt{agents/red\_team\_agent.py} & Renders a \texttt{ScenarioSeed}
+into a schema-valid example. \\
+\texttt{agents/generate\_red\_team.py} & Writes
+\texttt{data/red\_team\_examples.json}. \\
+\end{longtable}
+}
+
+Pipeline:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\NormalTok{ScenarioSeed {-}\textgreater{} injection pattern rendering {-}\textgreater{} schema{-}valid scenario {-}\textgreater{} dataset validation}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Injection Patterns}\label{injection-patterns}
+
+The generator uses five prompt-injection styles:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Pattern
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Purpose
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{direct\_override} & Explicitly instructs the agent to ignore
+prior instructions. \\
+\texttt{hidden\_html\_comment} & Hides the directive in markup-like
+content. \\
+\texttt{fake\_system\_note} & Impersonates a privileged instruction
+inside external context. \\
+\texttt{authority\_urgency} & Uses claimed authority and urgency to
+pressure compliance. \\
+\texttt{fake\_tool\_response} & Presents the directive as if it came
+from a tool response. \\
+\end{longtable}
+}
+
+Using multiple styles prevents the corpus from depending on one obvious
+phrase.
+
+\subsection{Deterministic Generation}\label{deterministic-generation}
+
+The default generation mode is offline and deterministic. It fills
+checked-in templates from checked-in seeds, requires no network access,
+and produces stable outputs suitable for tests and audits. An
+\texttt{online} mode remains reserved as an extension point and
+currently raises \texttt{NotImplementedError}.
+
+Regenerate and validate:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ agents/generate\_red\_team.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/red\_team\_examples.json}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Coverage}\label{coverage}
+
+\texttt{data/red\_team\_examples.json} contains 25 adversarial examples
+across all eight supported tools:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{send\_http\_request}
+\item
+  \texttt{send\_email}
+\item
+  \texttt{delete\_file}
+\item
+  \texttt{write\_file}
+\item
+  \texttt{create\_github\_issue}
+\item
+  \texttt{create\_calendar\_event}
+\item
+  \texttt{read\_file}
+\item
+  \texttt{create\_task}
+\end{itemize}
+
+Attack categories include prompt injection, data exfiltration, and
+unauthorized actions. The generated set includes both injected-context
+attacks and pure tool-call attacks where the risk is visible in the
+proposed arguments.
+
+\subsection{Quality Controls}\label{quality-controls}
+
+The red-team generator is covered by:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ agents/test\_injection\_patterns.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ agents/test\_red\_team\_agent.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ data/validate\_dataset.py data/red\_team\_examples.json}
+\end{Highlighting}
+\end{Shaded}
+
+The tests check pattern integrity, deterministic generation, schema
+validity, tool coverage, label consistency, and synthetic-only content.
+
+\subsection{Impact}\label{impact}
+
+The expanded adversarial corpus exposed missing policy coverage around
+protected writes, public issue credential leaks, sensitive reads,
+unauthorized calendar and task creation, and external HTTP behavior.
+Those issue classes are now covered by reusable policy checks and
+regression tests rather than by scenario-specific exceptions.
+
+\section{Evaluation Summary}\label{evaluation-summary}
+
+\subsection{Method}\label{method}
+
+Evaluation runs every stored scenario through the same policy checker,
+risk classifier, intent helpers, and firewall decision path used by the
+API. Results are compared against each scenario's
+\texttt{expected\_decision} label.
+
+The committed evaluation artifacts under \texttt{data/evaluation/} are
+generated from all discoverable datasets:
+
+\begin{itemize}
+\tightlist
+\item
+  \texttt{data/demo\_scenarios.json}
+\item
+  \texttt{data/sample\_examples.json}
+\item
+  \texttt{data/dataset\_v0.json}
+\item
+  \texttt{data/red\_team\_examples.json}
+\item
+  \texttt{data/benign\_edge\_cases.json}
+\end{itemize}
+
+\subsection{Current Results}\label{current-results}
+
+The 94-scenario stored evaluation reports:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}ll@{}}
+\toprule\noalign{}
+Metric & Result \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Attack Success Rate & 0.0\% \\
+Defense Success Rate & 100.0\% \\
+Benign Task Success Rate & 100.0\% \\
+False Positive Rate & 0.0\% \\
+False Negative Rate & 0.0\% \\
+Policy Compliance Accuracy & 100.0\% \\
+BLOCK Precision / Recall / F1 & 100.0\% / 100.0\% / 100.0\% \\
+\end{longtable}
+}
+
+The 85-example evaluation corpus has 85/85 firewall-label agreement,
+with no false negatives, no false positives, and all approval-labeled
+scenarios escalated.
+
+\subsection{Baseline Comparison}\label{baseline-comparison}
+
+Evaluation includes three configurations:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Configuration
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Behavior
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unprotected baseline & Allows every proposed call. \\
+Prompt-only guardrail baseline & Uses lightweight prompt and credential
+heuristics without structured policies. \\
+AgentShield firewall & Applies structured policy rules, risk scoring,
+and user-intent checks. \\
+\end{longtable}
+}
+
+The baseline exports demonstrate why structured tool-call enforcement is
+needed: the prompt-only guardrail catches obvious attacks but misses
+subtler policy violations that require inspecting tool arguments,
+recipients, URLs, HTTP methods, file paths, repository visibility, and
+user intent.
+
+\subsection{Fixed Issue Classes}\label{fixed-issue-classes}
+
+The expanded corpus previously surfaced the following issue classes, all
+now covered by reusable policies and regression tests:
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 2\tabcolsep) * \real{0.5000}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Issue class
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Current behavior
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Unrequested protected file writes & BLOCK or ASK\_APPROVAL depending on
+user authorization. \\
+Credentials in public issue bodies & BLOCK. \\
+Unrequested calendar or task creation from read-only requests &
+BLOCK. \\
+Sensitive file reads not requested by the user & BLOCK. \\
+Broadcast email beyond requested recipient scope & BLOCK. \\
+Internal \texttt{*.example} destinations treated as external & Correctly
+treated as internal when configured. \\
+Benign read-only public HTTP GET overblocked & ALLOW. \\
+Authorized external sends, posts, or attendees & ASK\_APPROVAL when
+confirmation is required. \\
+Read-only intent matched by substrings inside unrelated words & Fixed
+with standalone keyword and phrase matching. \\
+\end{longtable}
+}
+
+\subsection{Reproduction}\label{reproduction}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/experiment\_runner.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/baseline\_unprotected.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/baseline\_prompt\_guardrail.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/test\_metrics.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/label\_validator.py }\AttributeTok{{-}{-}rules}\NormalTok{ data/policy\_rules.json }\AttributeTok{{-}{-}test}
+\end{Highlighting}
+\end{Shaded}
+
+Generated artifacts are written to \texttt{data/evaluation/}.
+
+\subsection{Residual Scope}\label{residual-scope}
+
+\begin{itemize}
+\tightlist
+\item
+  The dataset is synthetic and scenario-based. It proves coverage for
+  the committed project scenarios, not every possible production input.
+\item
+  \texttt{ASK\_APPROVAL} is a policy boundary for legitimate but risky
+  actions.
+\item
+  Future corpus growth should add new tools, argument fields,
+  prompt-injection phrasings, and benign lookalikes as the system
+  expands.
+\end{itemize}
+
+\section{Demo Scenarios}\label{demo-scenarios}
+
+The demo set in \texttt{data/demo\_scenarios.json} covers the three
+user-visible decision paths: \texttt{ALLOW}, \texttt{BLOCK}, and
+\texttt{ASK\_APPROVAL}.
+
+\subsection{Scenarios}\label{scenarios}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 6\tabcolsep) * \real{0.2500}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+ID
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Tool
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Expected decision
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+What it demonstrates
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+\texttt{demo-safe-email} & \texttt{send\_email} & \texttt{ALLOW} & A
+normal internal email that matches the user's request. \\
+\texttt{demo-block-unauthorized-http} & \texttt{send\_http\_request} &
+\texttt{BLOCK} & An external state-changing HTTP request the user did
+not authorize. \\
+\texttt{demo-approval-delete} & \texttt{delete\_file} &
+\texttt{ASK\_APPROVAL} & A legitimate but destructive deletion that
+requires confirmation. \\
+\end{longtable}
+}
+
+\subsection{Run Through The API}\label{run-through-the-api}
+
+Start the backend:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{uvicorn}\NormalTok{ src.api:app }\AttributeTok{{-}{-}reload}
+\end{Highlighting}
+\end{Shaded}
+
+Run the demo scenarios from the frontend or call the API directly:
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\ExtensionTok{curl} \AttributeTok{{-}X}\NormalTok{ POST http://localhost:8000/run{-}batch }\DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}H} \StringTok{"Content{-}Type: application/json"} \DataTypeTok{\textbackslash{}}
+  \AttributeTok{{-}d} \StringTok{\textquotesingle{}\{"dataset\_names":["demo"]\}\textquotesingle{}}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Run Locally}\label{run-locally}
+
+\begin{Shaded}
+\begin{Highlighting}[]
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/test\_orchestrator.py}
+\VariableTok{PYTHONPATH}\OperatorTok{=}\NormalTok{. }\ExtensionTok{python3}\NormalTok{ src/label\_validator.py }\AttributeTok{{-}{-}rules}\NormalTok{ data/policy\_rules.json }\AttributeTok{{-}{-}dataset}\NormalTok{ data/demo\_scenarios.json}
+\end{Highlighting}
+\end{Shaded}
+
+\subsection{Demo Narrative}\label{demo-narrative}
+
+\begin{enumerate}
+\def\labelenumi{\arabic{enumi}.}
+\tightlist
+\item
+  Safe internal email is allowed because the tool call matches the
+  request and the recipient is internal.
+\item
+  Unauthorized external HTTP is blocked because the user requested a
+  summary, not a state-changing call to an external endpoint.
+\item
+  User-requested deletion is escalated because file deletion is
+  destructive even when the user asked for it.
+\end{enumerate}
+
+\section{Milestones and Team
+Contributions}\label{milestones-and-team-contributions}
+
+The project ran over eight weekly milestones. Each milestone contained
+three parallel stories so all three members contributed every week:
+Mrinal Setty owned the \texttt{-S1} (orchestration/backend) track,
+Aditya Shenoy the \texttt{-S2} (dataset and red-team) track, and Yashas
+Uttangi the \texttt{-S3} (policy, firewall, evaluation, and console)
+track.
+
+\subsection{Milestone Timeline}\label{milestone-timeline}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Milestone
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Dates
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Primary outcome
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+M1 & 15--22 Jun & Project setup, architecture, dataset schema,
+policy/evaluation setup \\
+M2 & 23--29 Jun & Dataset v0, simulated tool interfaces, policy/rule
+foundation \\
+M3 & 30 Jun--06 Jul & Target Agent, Red-Team Agent, and Firewall/Risk
+Classifier v0 \\
+M4 & 07--13 Jul & Integrated backend workflow, expanded attacks, policy
+compiler + firewall \\
+M5 & 14--20 Jul & Baselines, evaluation metrics, dataset validation,
+audit rubric \\
+M6 & 21--27 Jul & Dashboard, API integration, demo scenarios, result
+visualization \\
+M7 & 28 Jul--03 Aug & System testing, failure analysis, UI polish,
+report draft \\
+M8 & 04--10 Aug & Final demo, report submission, code submission \\
+\end{longtable}
+}
+
+\subsection{Team Contributions}\label{team-contributions}
+
+{\def\LTcaptype{none} % do not increment counter
+\begin{longtable}[]{@{}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}
+  >{\raggedright\arraybackslash}p{(\linewidth - 4\tabcolsep) * \real{0.3333}}@{}}
+\toprule\noalign{}
+\begin{minipage}[b]{\linewidth}\raggedright
+Member
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+Core ownership
+\end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
+GenAI contribution
+\end{minipage} \\
+\midrule\noalign{}
+\endhead
+\bottomrule\noalign{}
+\endlastfoot
+Mrinal Setty & Agent orchestration, Target Agent, tool interfaces,
+backend workflow and API & Multi-agent orchestration, Target Agent
+prompting, structured tool-call generation \\
+Aditya Shenoy & Red-Team Agent, synthetic dataset, attack taxonomy,
+dataset quality, report content & Adversarial attack generation,
+synthetic scenario generation, prompt-injection patterns \\
+Yashas Uttangi & Firewall, policy compiler, evaluation metrics,
+dashboard/console & Policy reasoning, audit explanation generation,
+LLM-as-a-judge quality checks \\
+\end{longtable}
+}
+
+Work was delivered continuously through reviewed pull requests across
+all eight milestones, spanning the backend workflow, the dataset and
+red-team corpus, and the policy/firewall/evaluation stack. The
+contribution target was an approximately equal split across the three
+members (about one third each), with each owning one major story every
+milestone.
+
+\section{Conclusion and Limitations}\label{conclusion-and-limitations}
+
+\subsection{Conclusion}\label{conclusion}
+
+AgentShield demonstrates that a dedicated, policy-driven firewall can
+secure tool-using AI agents against prompt injection, data exfiltration,
+and unauthorized actions \emph{before} a tool call executes. On the
+94-scenario stored evaluation set the firewall reaches 100\%
+policy-compliance with no false negatives and no false positives, while
+the unprotected and prompt-only baselines let unsafe calls through ---
+showing that structured inspection of tool arguments, recipients, URLs,
+and user intent catches violations that prompt-level guardrails miss.
+
+The red-team track was central to this outcome. Expanding the
+adversarial corpus across all eight tools surfaced coverage gaps ---
+around protected writes, public issue credential leaks, sensitive reads,
+and unauthorized calendar/task creation --- that were then closed with
+reusable policy checks and regression tests. Finding and fixing those
+gaps \emph{before} they reach a production integration is exactly the
+value the framework is meant to provide.
+
+\subsection{Limitations}\label{limitations}
+
+\begin{itemize}
+\tightlist
+\item
+  \textbf{Synthetic and scenario-based.} The dataset proves coverage for
+  the committed project scenarios, not every possible production input.
+  Real deployments would need continual corpus growth with new tools,
+  argument fields, injection phrasings, and benign lookalikes.
+\item
+  \textbf{Simulation only.} All tool execution is mocked; no real side
+  effects occur. Real-world execution must remain behind explicit user
+  approval and production integration controls.
+\item
+  \textbf{\texttt{ASK\_APPROVAL} is a policy boundary}, not a guarantee:
+  it marks legitimate but risky actions for human confirmation, and its
+  calibration depends on the configured policies.
+\item
+  \textbf{Subjective quality} (audit-explanation readability) is scored
+  with an LLM-as-a-judge and a rubric; only objective correctness is
+  measured against fixed ground-truth labels.
+\end{itemize}
+
+\end{document}
