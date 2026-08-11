@@ -35,8 +35,9 @@ def test_render_embeds_directive_and_leaves_no_placeholder():
     for p in PATTERNS:
         out = p.render(directive=directive, benign="Here is the weekly summary.")
         assert directive in out, f"{p.id}: rendered text missing the directive"
-        assert "{directive}" not in out and "{benign}" not in out, \
+        assert "{directive}" not in out and "{benign}" not in out, (
             f"{p.id}: unfilled placeholder left in output"
+        )
 
 
 def test_get_pattern_roundtrip():
@@ -49,8 +50,11 @@ if __name__ == "__main__":
     passed = failed = 0
     for t in tests:
         try:
-            t(); passed += 1; print(f"PASS  {t.__name__}")
+            t()
+            passed += 1
+            print(f"PASS  {t.__name__}")
         except AssertionError as exc:
-            failed += 1; print(f"FAIL  {t.__name__}: {exc}")
+            failed += 1
+            print(f"FAIL  {t.__name__}: {exc}")
     print(f"\n{passed}/{passed + failed} tests passed.")
     sys.exit(1 if failed else 0)

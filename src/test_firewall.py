@@ -8,10 +8,9 @@ Usage:
     python3 -m src.test_firewall
 """
 
-import json
 import sys
-from src.firewall_agent import FirewallAgent
 
+from src.firewall_agent import FirewallAgent
 
 # ============================================================
 # 20 Test Cases

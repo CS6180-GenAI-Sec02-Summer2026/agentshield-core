@@ -19,10 +19,9 @@ import json
 import sys
 from pathlib import Path
 
-from src.policy_compiler_agent import PolicyCompilerAgent
-from src.policy_checker import PolicyChecker
 from src.firewall_agent import FirewallAgent
-
+from src.policy_checker import PolicyChecker
+from src.policy_compiler_agent import PolicyCompilerAgent
 
 # ============================================================
 # Test examples covering all three decision paths
@@ -265,8 +264,12 @@ def run_compiler_tests():
     assert result.compiled_rules > 0, "No rules compiled from safety_policies.md"
     assert not warnings, f"Unexpected compiler warnings: {warnings}"
     rules_by_id = {rule.rule_id: rule for rule in result.rules}
-    assert rules_by_id["POLICY-009"].tools == ["delete_file"], "POLICY-009 should only apply to delete_file"
-    assert rules_by_id["POLICY-009"].decision == "BLOCK", "POLICY-009 should block unauthorized deletion"
+    assert rules_by_id["POLICY-009"].tools == ["delete_file"], (
+        "POLICY-009 should only apply to delete_file"
+    )
+    assert rules_by_id["POLICY-009"].decision == "BLOCK", (
+        "POLICY-009 should block unauthorized deletion"
+    )
     print("  PASS: Compiler produced rules from markdown")
 
     # Test compilation from existing JSON
@@ -286,7 +289,9 @@ def run_checker_tests():
 
     # Coverage report
     coverage = checker.get_coverage_report()
-    print(f"  Coverage: {coverage['total_rules']} rules, tools covered: {coverage['tools_covered']}")
+    print(
+        f"  Coverage: {coverage['total_rules']} rules, tools covered: {coverage['tools_covered']}"
+    )
     if coverage["tools_missing"]:
         print(f"  Warning: tools missing coverage: {coverage['tools_missing']}")
 
@@ -311,7 +316,9 @@ def run_checker_tests():
     for v in result.violations:
         print(f"    - [{v.rule_id}] {v.rule_name} -> {v.decision}")
 
-    assert result.violations_found >= 2, f"Expected multiple violations, got {result.violations_found}"
+    assert result.violations_found >= 2, (
+        f"Expected multiple violations, got {result.violations_found}"
+    )
     assert result.final_decision == "BLOCK", f"Expected BLOCK, got {result.final_decision}"
     print("  PASS: Checker found multiple violations correctly")
 
@@ -332,7 +339,9 @@ def run_checker_tests():
 
     clean_result = checker.check(clean_example)
     assert clean_result.all_clear, "Expected no violations for clean example"
-    assert clean_result.final_decision == "ALLOW", f"Expected ALLOW, got {clean_result.final_decision}"
+    assert clean_result.final_decision == "ALLOW", (
+        f"Expected ALLOW, got {clean_result.final_decision}"
+    )
     print("  PASS: Clean example has zero violations")
 
     return True
@@ -430,7 +439,7 @@ def run_audit_export_test():
     # Verify file
     assert Path(output_path).exists(), f"Audit log not created at {output_path}"
 
-    with open(output_path, "r") as f:
+    with open(output_path) as f:
         log = json.load(f)
 
     assert log["total_decisions"] == len(INTEGRATION_TEST_CASES)
@@ -444,7 +453,9 @@ def run_audit_export_test():
 
     # Print coverage
     coverage = agent.get_policy_coverage()
-    print(f"  Policy coverage: {coverage['enabled_rules']} rules, {len(coverage['tools_covered'])} tools")
+    print(
+        f"  Policy coverage: {coverage['enabled_rules']} rules, {len(coverage['tools_covered'])} tools"
+    )
 
     return True
 

@@ -32,13 +32,15 @@ def build_scores() -> list[dict]:
     for name in CORPUS:
         for e in json.loads((REPO / "data" / name).read_text(encoding="utf-8")):
             r = score_explanation(e)
-            rows.append({
-                "source": name,
-                "user_request": e["user_request"],
-                "total": r["total"],
-                "rating": r["rating"],
-                "scores": r["scores"],
-            })
+            rows.append(
+                {
+                    "source": name,
+                    "user_request": e["user_request"],
+                    "total": r["total"],
+                    "rating": r["rating"],
+                    "scores": r["scores"],
+                }
+            )
     return rows
 
 

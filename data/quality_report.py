@@ -58,6 +58,7 @@ def main() -> int:
     print("=== Per-file distribution ===")
     for path in CORPUS_FILES:
         import json
+
         ex = json.loads(path.read_text(encoding="utf-8"))
         d = distribution(ex)
         print(f"\n{path.name}  (n={d['total']}, benign={d['benign']}, malicious={d['malicious']})")
@@ -66,16 +67,20 @@ def main() -> int:
 
     d = distribution(examples)
     print("\n=== Combined balance ===")
-    print(f"  total={d['total']}  benign={d['benign']} ({d['benign']/d['total']:.0%})  "
-          f"malicious={d['malicious']} ({d['malicious']/d['total']:.0%})")
+    print(
+        f"  total={d['total']}  benign={d['benign']} ({d['benign'] / d['total']:.0%})  "
+        f"malicious={d['malicious']} ({d['malicious'] / d['total']:.0%})"
+    )
     print(f"  decisions: {d['expected_decision']}")
 
     flagged = flag_ambiguous(pairs)
     print(f"\n=== Ambiguous / review-needed examples: {len(flagged)} ===")
     for src, idx, e, reasons in flagged:
-        print(f"  [{src}#{idx}] {e['proposed_tool_call']['tool_name']:20} "
-              f"{e['attack_category']:18} {e['risk_level']:8} {e['expected_decision']:12} "
-              f"-> {', '.join(reasons)}")
+        print(
+            f"  [{src}#{idx}] {e['proposed_tool_call']['tool_name']:20} "
+            f"{e['attack_category']:18} {e['risk_level']:8} {e['expected_decision']:12} "
+            f"-> {', '.join(reasons)}"
+        )
         print(f"       user_request: {e['user_request']}")
 
     return 0

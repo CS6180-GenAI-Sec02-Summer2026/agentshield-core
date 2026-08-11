@@ -1,12 +1,17 @@
 """FastAPI app for AgentShield backend integration."""
 
+from contextlib import asynccontextmanager
 from typing import Any
 
+from src.app_settings import AppSettings
+from src.llm_client import LLMError
 from src.orchestrator import AgentShieldOrchestrator
 from src.scenario_store import available_datasets
 from src.schemas import (
     BatchRunRequest,
     DatasetQuery,
+    PolicyCompileRequest,
+    RedTeamGenerationRequest,
     ScenarioRunRequest,
     ScenarioRunResponse,
 )
@@ -26,19 +31,27 @@ def create_app() -> Any:
     if FastAPI is None:
         raise RuntimeError("FastAPI is not installed. Install requirements.txt to run the API.")
 
+    orchestrator = AgentShieldOrchestrator()
+
+    @asynccontextmanager
+    async def lifespan(_: Any):
+        yield
+        orchestrator.close()
+
     app = FastAPI(
         title="AgentShield Core API",
-        version="0.1.0",
+        version="1.0.0",
         description="Backend orchestration API for AgentShield scenario simulation and firewall decisions.",
+        lifespan=lifespan,
     )
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["*"],
+        allow_origins=_cors_origins(),
         allow_credentials=False,
         allow_methods=["*"],
         allow_headers=["*"],
     )
-    orchestrator = AgentShieldOrchestrator()
+    app.state.orchestrator = orchestrator
 
     @app.get("/health")
     def health() -> dict[str, Any]:
@@ -56,7 +69,13 @@ def create_app() -> Any:
     def run_scenario(request: ScenarioRunRequest) -> dict[str, Any]:
         try:
             scenario = _scenario_from_request(request)
-            return orchestrator.run_scenario(scenario, request.execute_allowed_tool)
+            return orchestrator.run_scenario(
+                scenario,
+                request.execute_allowed_tool,
+                request.use_llm,
+            )
+        except LLMError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except (ToolValidationError, ValueError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -70,7 +89,10 @@ def create_app() -> Any:
                 scenarios=scenarios,
                 dataset_names=request.dataset_names,
                 execute_allowed_tools=request.execute_allowed_tools,
+                use_llm=request.use_llm,
             )
+        except LLMError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
         except (ToolValidationError, ValueError, FileNotFoundError) as exc:
             raise HTTPException(status_code=400, detail=str(exc)) from exc
 
@@ -96,6 +118,24 @@ def create_app() -> Any:
     def datasets() -> dict[str, Any]:
         return {"datasets": available_datasets()}
 
+    @app.post("/agents/red-team/generate")
+    def generate_red_team(request: RedTeamGenerationRequest) -> dict[str, Any]:
+        try:
+            return orchestrator.generate_red_team_scenario(_model_to_dict(request.seed))
+        except LLMError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except (ToolValidationError, ValueError) as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
+    @app.post("/agents/policy/compile")
+    def compile_policy(request: PolicyCompileRequest) -> dict[str, Any]:
+        try:
+            return orchestrator.compile_policy_candidate(**_model_to_dict(request))
+        except LLMError as exc:
+            raise HTTPException(status_code=503, detail=str(exc)) from exc
+        except ValueError as exc:
+            raise HTTPException(status_code=400, detail=str(exc)) from exc
+
     return app
 
 
@@ -117,6 +157,10 @@ def _model_to_dict(model: Any) -> dict[str, Any]:
     if hasattr(model, "model_dump"):
         return model.model_dump(exclude_none=True)
     return model.dict(exclude_none=True)
+
+
+def _cors_origins() -> list[str]:
+    return AppSettings().cors_origin_list
 
 
 try:

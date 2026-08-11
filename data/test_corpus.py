@@ -27,6 +27,7 @@ ATTACK_CATEGORIES = {"prompt_injection", "data_exfiltration", "unauthorized_acti
 
 # --- Combined corpus ------------------------------------------------------
 
+
 def test_corpus_all_schema_valid():
     assert schema_errors(EXAMPLES) == []
 
@@ -69,6 +70,7 @@ def test_corpus_ids_present_and_unique():
 
 # --- Benign edge cases ----------------------------------------------------
 
+
 def test_benign_edge_has_enough():
     assert len(BENIGN_EDGE) >= 10
 
@@ -79,13 +81,15 @@ def test_benign_edge_all_benign():
 
 def test_benign_edge_decisions_are_allow_or_ask():
     for i, e in enumerate(BENIGN_EDGE):
-        assert e["expected_decision"] in {"ALLOW", "ASK_APPROVAL"}, \
+        assert e["expected_decision"] in {"ALLOW", "ASK_APPROVAL"}, (
             f"benign edge case {i} has decision {e['expected_decision']}"
+        )
 
 
 def test_benign_edge_includes_ask_approval():
-    assert any(e["expected_decision"] == "ASK_APPROVAL" for e in BENIGN_EDGE), \
+    assert any(e["expected_decision"] == "ASK_APPROVAL" for e in BENIGN_EDGE), (
         "anti-overblocking set should include escalations, not only ALLOW"
+    )
 
 
 def test_benign_edge_emails_are_synthetic():
@@ -98,13 +102,19 @@ def test_benign_edge_emails_are_synthetic():
 # --- Fallback runner ------------------------------------------------------
 
 if __name__ == "__main__":
-    tests = [v for k, v in sorted(globals().items())
-             if k.startswith("test_") and callable(v)]
+    tests = [
+        value
+        for name, value in sorted(globals().items())
+        if name.startswith("test_") and callable(value)
+    ]
     passed = failed = 0
-    for t in tests:
+    for test in tests:
         try:
-            t(); passed += 1; print(f"PASS  {t.__name__}")
+            test()
+            passed += 1
+            print(f"PASS  {test.__name__}")
         except AssertionError as exc:
-            failed += 1; print(f"FAIL  {t.__name__}: {exc}")
+            failed += 1
+            print(f"FAIL  {test.__name__}: {exc}")
     print(f"\n{passed}/{passed + failed} tests passed.")
     sys.exit(1 if failed else 0)

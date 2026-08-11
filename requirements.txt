@@ -1,5 +1,8 @@
 fastapi>=0.111
 uvicorn[standard]>=0.30
 pydantic>=2
+pydantic-settings>=2.2
+google-genai>=2.3.0
+openai>=2.0.0
 jsonschema>=4.22
 pytest>=8

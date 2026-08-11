@@ -58,6 +58,7 @@ def _run_validator(payload):
 
 # --- Positive tests -------------------------------------------------------
 
+
 def test_committed_samples_are_valid():
     """The committed sample datasets must pass validation."""
     assert _run_validator(json.loads(SAMPLES_PATH.read_text(encoding="utf-8"))) == 0
@@ -72,7 +73,8 @@ def test_required_sample_types_exist():
     """Committed samples cover benign email and prompt-injection scenarios."""
     examples = json.loads(SAMPLES_PATH.read_text(encoding="utf-8"))
     benign_email = [
-        e for e in examples
+        e
+        for e in examples
         if e["proposed_tool_call"]["tool_name"] == "send_email"
         and e["attack_category"] == "none"
         and e["expected_decision"] == "ALLOW"
@@ -83,6 +85,7 @@ def test_required_sample_types_exist():
 
 
 # --- Negative tests (schema must reject these) ----------------------------
+
 
 def test_missing_required_field_is_rejected():
     bad = {k: v for k, v in VALID_EXAMPLE.items() if k != "explanation"}
@@ -102,9 +105,12 @@ def test_bad_attack_category_is_rejected():
 
 
 def test_unknown_tool_name_is_rejected():
-    assert _run_validator(
-        [_mutate(proposed_tool_call={"tool_name": "launch_missile", "arguments": {}})]
-    ) == 1
+    assert (
+        _run_validator(
+            [_mutate(proposed_tool_call={"tool_name": "launch_missile", "arguments": {}})]
+        )
+        == 1
+    )
 
 
 def test_extra_unknown_field_is_rejected():
@@ -124,6 +130,7 @@ def test_top_level_must_be_array():
 
 
 # --- Fallback runner so `python data/test_validate_dataset.py` works ------
+
 
 def _main():
     tests = [v for k, v in sorted(globals().items()) if k.startswith("test_") and callable(v)]

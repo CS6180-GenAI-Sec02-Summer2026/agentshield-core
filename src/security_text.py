@@ -1,13 +1,12 @@
 """Shared text helpers for security checks."""
 
-from collections.abc import Iterable
 import re
+from collections.abc import Iterable
 
 from src.security_patterns import (
     DEFAULT_INTERNAL_EMAIL_DOMAINS,
     INTERNAL_TARGET_INDICATORS,
 )
-
 
 CREDENTIAL_VALUE_RE = re.compile(
     r"\b(api[_-]?key|auth[_-]?token|client[_-]?secret|credential|"
@@ -46,7 +45,9 @@ def matched_patterns(value: object, patterns: Iterable[str]) -> list[str]:
 def matched_credential_values(value: object) -> list[str]:
     """Return credential-like keys that appear to include concrete values."""
     text = flatten_to_string(value)
-    return sorted({match.group(1).lower().replace("-", "_") for match in CREDENTIAL_VALUE_RE.finditer(text)})
+    return sorted(
+        {match.group(1).lower().replace("-", "_") for match in CREDENTIAL_VALUE_RE.finditer(text)}
+    )
 
 
 def matches_any_pattern(value: object, patterns: Iterable[str]) -> bool:
@@ -102,8 +103,7 @@ def external_recipients(
         return []
 
     domains = tuple(
-        domain.lower().strip()
-        for domain in (internal_domains or DEFAULT_INTERNAL_EMAIL_DOMAINS)
+        domain.lower().strip() for domain in (internal_domains or DEFAULT_INTERNAL_EMAIL_DOMAINS)
     )
     return [
         recipient

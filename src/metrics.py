@@ -32,36 +32,41 @@ Usage:
     engine.export_report("data/metrics_report.json")
 """
 
-import json
 import csv
-from dataclasses import dataclass, asdict, field
-from pathlib import Path
-from typing import Optional
+import json
 from collections import defaultdict
+from dataclasses import asdict, dataclass, field
+from pathlib import Path
 
 
 @dataclass
 class ConfusionMatrix:
     """3x3 confusion matrix for ALLOW / BLOCK / ASK_APPROVAL."""
+
     # True positives (correct decisions)
-    true_allow: int = 0       # Expected ALLOW, got ALLOW
-    true_block: int = 0       # Expected BLOCK, got BLOCK
+    true_allow: int = 0  # Expected ALLOW, got ALLOW
+    true_block: int = 0  # Expected BLOCK, got BLOCK
     true_escalation: int = 0  # Expected ASK_APPROVAL, got ASK_APPROVAL
 
     # Errors
-    false_block: int = 0      # Expected ALLOW, got BLOCK (overblock)
-    false_allow: int = 0      # Expected BLOCK, got ALLOW (missed attack)
+    false_block: int = 0  # Expected ALLOW, got BLOCK (overblock)
+    false_allow: int = 0  # Expected BLOCK, got ALLOW (missed attack)
     escalation_on_allow: int = 0  # Expected ALLOW, got ASK_APPROVAL
     escalation_on_block: int = 0  # Expected BLOCK, got ASK_APPROVAL
-    miss_as_allow: int = 0    # Expected ASK_APPROVAL, got ALLOW
-    miss_as_block: int = 0    # Expected ASK_APPROVAL, got BLOCK
+    miss_as_allow: int = 0  # Expected ASK_APPROVAL, got ALLOW
+    miss_as_block: int = 0  # Expected ASK_APPROVAL, got BLOCK
 
     def total(self) -> int:
         return (
-            self.true_allow + self.true_block + self.true_escalation
-            + self.false_block + self.false_allow
-            + self.escalation_on_allow + self.escalation_on_block
-            + self.miss_as_allow + self.miss_as_block
+            self.true_allow
+            + self.true_block
+            + self.true_escalation
+            + self.false_block
+            + self.false_allow
+            + self.escalation_on_allow
+            + self.escalation_on_block
+            + self.miss_as_allow
+            + self.miss_as_block
         )
 
     def to_dict(self) -> dict:
@@ -74,7 +79,11 @@ class ConfusionMatrix:
             "rows": {
                 "Expected ALLOW": [self.true_allow, self.false_block, self.escalation_on_allow],
                 "Expected BLOCK": [self.false_allow, self.true_block, self.escalation_on_block],
-                "Expected ASK_APPROVAL": [self.miss_as_allow, self.miss_as_block, self.true_escalation],
+                "Expected ASK_APPROVAL": [
+                    self.miss_as_allow,
+                    self.miss_as_block,
+                    self.true_escalation,
+                ],
             },
         }
 
@@ -82,28 +91,29 @@ class ConfusionMatrix:
 @dataclass
 class MetricsReport:
     """Complete metrics report."""
+
     # Primary security metrics
-    attack_success_rate: Optional[float] = None
-    defense_success_rate: Optional[float] = None
-    benign_task_success_rate: Optional[float] = None
-    false_positive_rate: Optional[float] = None
-    false_negative_rate: Optional[float] = None
-    policy_compliance_accuracy: Optional[float] = None
+    attack_success_rate: float | None = None
+    defense_success_rate: float | None = None
+    benign_task_success_rate: float | None = None
+    false_positive_rate: float | None = None
+    false_negative_rate: float | None = None
+    policy_compliance_accuracy: float | None = None
 
     # Integrity and quality
-    tool_call_integrity: Optional[float] = None
-    audit_explanation_quality: Optional[float] = None
+    tool_call_integrity: float | None = None
+    audit_explanation_quality: float | None = None
 
     # Additional metrics
-    escalation_rate: Optional[float] = None
-    escalation_rate_on_malicious: Optional[float] = None
-    escalation_rate_on_benign: Optional[float] = None
-    escalation_rate_on_approval: Optional[float] = None
+    escalation_rate: float | None = None
+    escalation_rate_on_malicious: float | None = None
+    escalation_rate_on_benign: float | None = None
+    escalation_rate_on_approval: float | None = None
 
     # Precision / Recall / F1
-    block_precision: Optional[float] = None
-    block_recall: Optional[float] = None
-    block_f1: Optional[float] = None
+    block_precision: float | None = None
+    block_recall: float | None = None
+    block_f1: float | None = None
 
     # Counts
     total_examples: int = 0
@@ -114,7 +124,7 @@ class MetricsReport:
     # Breakdowns
     per_tool_accuracy: dict = field(default_factory=dict)
     per_category_dsr: dict = field(default_factory=dict)
-    confusion_matrix: Optional[dict] = None
+    confusion_matrix: dict | None = None
 
     def to_dict(self) -> dict:
         return asdict(self)
@@ -123,6 +133,7 @@ class MetricsReport:
 @dataclass
 class EvaluationResult:
     """A single evaluation result (expected vs actual decision)."""
+
     example_id: str
     expected_decision: str
     actual_decision: str
@@ -130,7 +141,7 @@ class EvaluationResult:
     attack_category: str = "none"
     risk_level: str = "low"
     tool_call_intact: bool = True
-    audit_score: Optional[float] = None
+    audit_score: float | None = None
 
 
 class MetricsEngine:
@@ -155,16 +166,18 @@ class MetricsEngine:
     def add_from_dicts(self, results: list[dict]):
         """Add results from dictionaries."""
         for r in results:
-            self.results.append(EvaluationResult(
-                example_id=r.get("example_id", "unknown"),
-                expected_decision=r.get("expected_decision", "ALLOW"),
-                actual_decision=r.get("actual_decision", "ALLOW"),
-                tool_name=r.get("tool_name", "unknown"),
-                attack_category=r.get("attack_category", "none"),
-                risk_level=r.get("risk_level", "low"),
-                tool_call_intact=r.get("tool_call_intact", True),
-                audit_score=r.get("audit_score"),
-            ))
+            self.results.append(
+                EvaluationResult(
+                    example_id=r.get("example_id", "unknown"),
+                    expected_decision=r.get("expected_decision", "ALLOW"),
+                    actual_decision=r.get("actual_decision", "ALLOW"),
+                    tool_name=r.get("tool_name", "unknown"),
+                    attack_category=r.get("attack_category", "none"),
+                    risk_level=r.get("risk_level", "low"),
+                    tool_call_intact=r.get("tool_call_intact", True),
+                    audit_score=r.get("audit_score"),
+                )
+            )
 
     def clear(self):
         """Clear all results."""
@@ -174,7 +187,7 @@ class MetricsEngine:
     # Helper: safe division
     # ============================================================
 
-    def _safe_div(self, numerator: int, denominator: int) -> Optional[float]:
+    def _safe_div(self, numerator: int, denominator: int) -> float | None:
         """Safe division that returns None on zero denominator."""
         if denominator == 0:
             return None
@@ -219,7 +232,7 @@ class MetricsEngine:
     # Primary security metrics (1-6)
     # ============================================================
 
-    def compute_attack_success_rate(self) -> Optional[float]:
+    def compute_attack_success_rate(self) -> float | None:
         """Metric 1: ASR - how often attacks bypass the firewall."""
         malicious = [r for r in self.results if r.expected_decision == "BLOCK"]
         if not malicious:
@@ -227,7 +240,7 @@ class MetricsEngine:
         attacks_succeeded = sum(1 for r in malicious if r.actual_decision == "ALLOW")
         return self._safe_div(attacks_succeeded, len(malicious))
 
-    def compute_defense_success_rate(self) -> Optional[float]:
+    def compute_defense_success_rate(self) -> float | None:
         """Metric 2: DSR - how often firewall correctly blocks attacks."""
         malicious = [r for r in self.results if r.expected_decision == "BLOCK"]
         if not malicious:
@@ -235,7 +248,7 @@ class MetricsEngine:
         correctly_blocked = sum(1 for r in malicious if r.actual_decision == "BLOCK")
         return self._safe_div(correctly_blocked, len(malicious))
 
-    def compute_benign_task_success_rate(self) -> Optional[float]:
+    def compute_benign_task_success_rate(self) -> float | None:
         """Metric 3: BTSR - how often safe requests are correctly allowed."""
         benign = [r for r in self.results if r.expected_decision == "ALLOW"]
         if not benign:
@@ -243,7 +256,7 @@ class MetricsEngine:
         correctly_allowed = sum(1 for r in benign if r.actual_decision == "ALLOW")
         return self._safe_div(correctly_allowed, len(benign))
 
-    def compute_false_positive_rate(self) -> Optional[float]:
+    def compute_false_positive_rate(self) -> float | None:
         """Metric 4: FPR - how often safe actions are incorrectly blocked."""
         benign = [r for r in self.results if r.expected_decision == "ALLOW"]
         if not benign:
@@ -251,7 +264,7 @@ class MetricsEngine:
         incorrectly_blocked = sum(1 for r in benign if r.actual_decision == "BLOCK")
         return self._safe_div(incorrectly_blocked, len(benign))
 
-    def compute_false_negative_rate(self) -> Optional[float]:
+    def compute_false_negative_rate(self) -> float | None:
         """Metric 5: FNR - how often unsafe actions are incorrectly allowed."""
         malicious = [r for r in self.results if r.expected_decision == "BLOCK"]
         if not malicious:
@@ -259,7 +272,7 @@ class MetricsEngine:
         incorrectly_allowed = sum(1 for r in malicious if r.actual_decision == "ALLOW")
         return self._safe_div(incorrectly_allowed, len(malicious))
 
-    def compute_policy_compliance_accuracy(self) -> Optional[float]:
+    def compute_policy_compliance_accuracy(self) -> float | None:
         """Metric 6: PCA - overall accuracy across all three decision classes."""
         if not self.results:
             return None
@@ -270,14 +283,14 @@ class MetricsEngine:
     # Integrity and quality metrics (7-8)
     # ============================================================
 
-    def compute_tool_call_integrity(self) -> Optional[float]:
+    def compute_tool_call_integrity(self) -> float | None:
         """Metric 7: TCI - whether tool calls match user intent without modifications."""
         if not self.results:
             return None
         intact = sum(1 for r in self.results if r.tool_call_intact)
         return self._safe_div(intact, len(self.results))
 
-    def compute_audit_explanation_quality(self) -> Optional[float]:
+    def compute_audit_explanation_quality(self) -> float | None:
         """
         Metric 8: AEQ - average audit explanation quality score.
         Returns average on 1-3 scale, or None if no scores available.
@@ -306,15 +319,21 @@ class MetricsEngine:
             "on_malicious": self._safe_div(
                 sum(1 for r in malicious if r.actual_decision == "ASK_APPROVAL"),
                 len(malicious),
-            ) if malicious else None,
+            )
+            if malicious
+            else None,
             "on_benign": self._safe_div(
                 sum(1 for r in benign if r.actual_decision == "ASK_APPROVAL"),
                 len(benign),
-            ) if benign else None,
+            )
+            if benign
+            else None,
             "on_approval": self._safe_div(
                 sum(1 for r in approval if r.actual_decision == "ASK_APPROVAL"),
                 len(approval),
-            ) if approval else None,
+            )
+            if approval
+            else None,
         }
 
     def compute_per_tool_accuracy(self) -> dict:
@@ -355,15 +374,12 @@ class MetricsEngine:
     def compute_block_precision_recall_f1(self) -> dict:
         """Metric 12: Precision, Recall, and F1 for BLOCK decisions."""
         true_blocks = sum(
-            1 for r in self.results
+            1
+            for r in self.results
             if r.expected_decision == "BLOCK" and r.actual_decision == "BLOCK"
         )
-        total_predicted_block = sum(
-            1 for r in self.results if r.actual_decision == "BLOCK"
-        )
-        total_actual_block = sum(
-            1 for r in self.results if r.expected_decision == "BLOCK"
-        )
+        total_predicted_block = sum(1 for r in self.results if r.actual_decision == "BLOCK")
+        total_actual_block = sum(1 for r in self.results if r.expected_decision == "BLOCK")
 
         precision = self._safe_div(true_blocks, total_predicted_block)
         recall = self._safe_div(true_blocks, total_actual_block)
@@ -403,32 +419,26 @@ class MetricsEngine:
             false_positive_rate=self.compute_false_positive_rate(),
             false_negative_rate=self.compute_false_negative_rate(),
             policy_compliance_accuracy=self.compute_policy_compliance_accuracy(),
-
             # Integrity and quality (7-8)
             tool_call_integrity=self.compute_tool_call_integrity(),
             audit_explanation_quality=self.compute_audit_explanation_quality(),
-
             # Escalation (9)
             escalation_rate=escalation["overall"],
             escalation_rate_on_malicious=escalation["on_malicious"],
             escalation_rate_on_benign=escalation["on_benign"],
             escalation_rate_on_approval=escalation["on_approval"],
-
             # Precision/Recall/F1 (12)
             block_precision=prf["precision"],
             block_recall=prf["recall"],
             block_f1=prf["f1"],
-
             # Counts
             total_examples=len(self.results),
             total_malicious=malicious_count,
             total_benign=benign_count,
             total_approval=approval_count,
-
             # Breakdowns (10-11)
             per_tool_accuracy=self.compute_per_tool_accuracy(),
             per_category_dsr=self.compute_per_category_dsr(),
-
             # Confusion matrix
             confusion_matrix=cm.to_matrix(),
         )
@@ -456,22 +466,41 @@ class MetricsEngine:
         path.parent.mkdir(parents=True, exist_ok=True)
 
         headers = [
-            "total_examples", "total_malicious", "total_benign", "total_approval",
-            "ASR", "DSR", "BTSR", "FPR", "FNR", "PCA",
-            "TCI", "AEQ",
+            "total_examples",
+            "total_malicious",
+            "total_benign",
+            "total_approval",
+            "ASR",
+            "DSR",
+            "BTSR",
+            "FPR",
+            "FNR",
+            "PCA",
+            "TCI",
+            "AEQ",
             "escalation_rate",
-            "block_precision", "block_recall", "block_f1",
+            "block_precision",
+            "block_recall",
+            "block_f1",
         ]
 
         row = [
-            report.total_examples, report.total_malicious,
-            report.total_benign, report.total_approval,
-            report.attack_success_rate, report.defense_success_rate,
-            report.benign_task_success_rate, report.false_positive_rate,
-            report.false_negative_rate, report.policy_compliance_accuracy,
-            report.tool_call_integrity, report.audit_explanation_quality,
+            report.total_examples,
+            report.total_malicious,
+            report.total_benign,
+            report.total_approval,
+            report.attack_success_rate,
+            report.defense_success_rate,
+            report.benign_task_success_rate,
+            report.false_positive_rate,
+            report.false_negative_rate,
+            report.policy_compliance_accuracy,
+            report.tool_call_integrity,
+            report.audit_explanation_quality,
             report.escalation_rate,
-            report.block_precision, report.block_recall, report.block_f1,
+            report.block_precision,
+            report.block_recall,
+            report.block_f1,
         ]
 
         with open(path, "w", newline="", encoding="utf-8") as f:
@@ -489,9 +518,9 @@ class MetricsEngine:
 
         with open(path, "w", newline="", encoding="utf-8") as f:
             writer = csv.writer(f, lineterminator="\n")
-            writer.writerow([""] + matrix["headers"])
+            writer.writerow(["", *matrix["headers"]])
             for row_label, values in matrix["rows"].items():
-                writer.writerow([row_label] + values)
+                writer.writerow([row_label, *values])
         print(f"Confusion matrix CSV exported to {filepath}")
 
     def export_per_tool_csv(self, filepath: str):

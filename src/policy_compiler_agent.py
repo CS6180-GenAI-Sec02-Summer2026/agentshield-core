@@ -19,16 +19,22 @@ Usage:
 
 import json
 import re
-from dataclasses import dataclass, asdict
+from collections import Counter
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional
 
+from src.agent_runtime import AgentLLMRuntime, offline_runtime
+from src.llm_client import LLMError, LLMResponseValidationError
+from src.llm_models import LLMPolicyCompilation, PolicyCheckType
+from src.llm_safety import prompt_json
 from src.security_patterns import INJECTION_PATTERNS, SECRET_PATTERNS
+from src.tools import list_tool_specs
 
 
 @dataclass
 class CompiledRule:
     """A single compiled policy rule."""
+
     rule_id: str
     name: str
     description: str
@@ -48,6 +54,7 @@ class CompiledRule:
 @dataclass
 class CompilationResult:
     """Result of a policy compilation."""
+
     total_policies: int
     compiled_rules: int
     skipped: int
@@ -69,8 +76,13 @@ class CompilationResult:
 # ============================================================
 
 ALL_TOOLS = [
-    "send_email", "read_file", "write_file", "delete_file",
-    "create_calendar_event", "create_task", "create_github_issue",
+    "send_email",
+    "read_file",
+    "write_file",
+    "delete_file",
+    "create_calendar_event",
+    "create_task",
+    "create_github_issue",
     "send_http_request",
 ]
 
@@ -101,13 +113,19 @@ TOOL_KEYWORD_MAP = {
 CONDITION_KEYWORD_MAP = {
     "private file": {"check": "contains_file_content", "field": "arguments.body"},
     "file content": {"check": "contains_file_content", "field": "arguments.body"},
-    "sensitive sharing content": {"check": "contains_sensitive_sharing_content", "field": "arguments"},
+    "sensitive sharing content": {
+        "check": "contains_sensitive_sharing_content",
+        "field": "arguments",
+    },
     "private exports": {"check": "contains_sensitive_sharing_content", "field": "arguments"},
     "external recipient": {"check": "is_external_recipient", "field": "arguments.to"},
     "external email": {"check": "is_external_recipient", "field": "arguments.to"},
     "secret": {"check": "contains_secret_pattern", "field": "arguments"},
     "credential": {"check": "contains_secret_pattern", "field": "arguments"},
-    "credential-like key/value": {"check": "contains_credential_value", "field": "arguments.body|arguments.title"},
+    "credential-like key/value": {
+        "check": "contains_credential_value",
+        "field": "arguments.body|arguments.title",
+    },
     "api key": {"check": "contains_secret_pattern", "field": "arguments"},
     "password": {"check": "contains_secret_pattern", "field": "arguments"},
     "token": {"check": "contains_secret_pattern", "field": "arguments"},
@@ -124,14 +142,32 @@ CONDITION_KEYWORD_MAP = {
     "read-only intent": {"check": "user_request_is_read_only", "field": "user_request"},
     "non-destructive": {"check": "contradicts_user_intent", "field": "proposed_tool_call"},
     "sensitive": {"check": "contains_sensitive_content", "field": "arguments.body|arguments.title"},
-    "sensitive path": {"check": "contains_sensitive_file_path", "field": "arguments.file_path|arguments.path"},
+    "sensitive path": {
+        "check": "contains_sensitive_file_path",
+        "field": "arguments.file_path|arguments.path",
+    },
     "protected configuration": {"check": "contains_protected_file_change", "field": "arguments"},
-    "external participant": {"check": "has_external_participant_or_public", "field": "arguments.participants"},
-    "external attendee": {"check": "has_external_participant_or_public", "field": "arguments.attendees"},
+    "external participant": {
+        "check": "has_external_participant_or_public",
+        "field": "arguments.participants",
+    },
+    "external attendee": {
+        "check": "has_external_participant_or_public",
+        "field": "arguments.attendees",
+    },
     "public": {"check": "has_external_participant_or_public", "field": "arguments.visibility"},
-    "public repository": {"check": "is_public_repository", "field": "arguments.repo|arguments.repo_visibility"},
-    "internal information": {"check": "contains_internal_reference", "field": "arguments.body|arguments.title"},
-    "internal reference": {"check": "contains_internal_reference", "field": "arguments.body|arguments.title"},
+    "public repository": {
+        "check": "is_public_repository",
+        "field": "arguments.repo|arguments.repo_visibility",
+    },
+    "internal information": {
+        "check": "contains_internal_reference",
+        "field": "arguments.body|arguments.title",
+    },
+    "internal reference": {
+        "check": "contains_internal_reference",
+        "field": "arguments.body|arguments.title",
+    },
     "broad group": {"check": "is_broadcast_recipient", "field": "arguments.to"},
     "mailing list": {"check": "is_broadcast_recipient", "field": "arguments.to"},
     "http method": {"check": "is_state_changing_http_method", "field": "arguments.method"},
@@ -157,9 +193,18 @@ RISK_KEYWORDS = {
 # Attack category keyword mapping
 ATTACK_CATEGORY_KEYWORDS = {
     "prompt_injection": ["injection", "override", "untrusted", "ignore instructions"],
-    "data_exfiltration": ["exfiltration", "leak", "external", "private", "sensitive", "credential", "secret"],
+    "data_exfiltration": [
+        "exfiltration",
+        "leak",
+        "external",
+        "private",
+        "sensitive",
+        "credential",
+        "secret",
+    ],
     "unauthorized_action": ["unauthorized", "bulk", "delete", "destructive", "not requested"],
 }
+
 
 def _extract_markdown_field(text: str, label: str) -> str | None:
     """Return the one-line value for a bold markdown policy field."""
@@ -173,9 +218,22 @@ class PolicyCompilerAgent:
     JSON rules for the AgentShield firewall.
     """
 
-    def __init__(self):
+    SYSTEM_PROMPT = """
+You are the AgentShield Policy Compiler Agent. Translate one natural-language
+security policy into a candidate firewall rule using only the supported tools
+and check types supplied in the input. Preserve the policy's intended decision,
+risk, and scope. Use ALWAYS only when the policy truly applies unconditionally.
+The result is a candidate for validation and human review, not an activated
+rule. Return only the schema-constrained response.
+""".strip()
+    PROMPT_VERSION = "policy-compiler-v2"
+
+    def __init__(self, runtime: AgentLLMRuntime | None = None):
+        self.runtime = runtime or offline_runtime()
         self.compiled_rules: list[CompiledRule] = []
         self.errors: list[str] = []
+        self.last_call_metadata: dict | None = None
+        self.last_mode = "offline_rules"
 
     def _extract_tools(self, text: str) -> list[str]:
         """Extract target tools from policy text."""
@@ -186,7 +244,7 @@ class PolicyCompilerAgent:
                 return ALL_TOOLS
 
             tools = set()
-            for token in re.findall(r'`(\w+)`', applies_to):
+            for token in re.findall(r"`(\w+)`", applies_to):
                 if token in TOOL_KEYWORD_MAP:
                     tools.update(TOOL_KEYWORD_MAP[token])
             if tools:
@@ -198,7 +256,7 @@ class PolicyCompilerAgent:
             return ALL_TOOLS
 
         tools = set()
-        backtick_tools = re.findall(r'`(\w+)`', text)
+        backtick_tools = re.findall(r"`(\w+)`", text)
         for bt in backtick_tools:
             if bt in TOOL_KEYWORD_MAP:
                 tools.update(TOOL_KEYWORD_MAP[bt])
@@ -286,12 +344,9 @@ class PolicyCompilerAgent:
         if not checks:
             return {"operator": "ALWAYS", "checks": []}
 
-        operator = "AND" if len(checks) > 1 else "AND"
-        return {"operator": operator, "checks": checks}
+        return {"operator": "AND", "checks": checks}
 
-    def _generate_explanation_template(
-        self, name: str, decision: str, tools: list[str]
-    ) -> str:
+    def _generate_explanation_template(self, name: str, decision: str, tools: list[str]) -> str:
         """Generate an explanation template for the rule."""
         if decision == "BLOCK":
             return (
@@ -304,17 +359,16 @@ class PolicyCompilerAgent:
                 f"before it can proceed."
             )
         else:
-            return (
-                f"Allowed: {name}. The proposed tool call passed all security checks."
-            )
+            return f"Allowed: {name}. The proposed tool call passed all security checks."
 
     def compile_policy(
         self,
         policy_id: str,
         name: str,
         full_text: str,
-        priority: Optional[int] = None,
-    ) -> Optional[CompiledRule]:
+        priority: int | None = None,
+        use_llm: bool | None = None,
+    ) -> CompiledRule | None:
         """
         Compile a single natural-language policy into a structured rule.
 
@@ -327,38 +381,117 @@ class PolicyCompilerAgent:
         Returns:
             CompiledRule or None if compilation fails
         """
-        try:
-            tools = self._extract_tools(full_text)
-            decision = self._extract_decision(full_text)
-            risk_level = self._extract_risk_level(full_text)
-            attack_categories = self._extract_attack_categories(full_text)
-            conditions = self._extract_conditions(full_text, tools)
-            explanation = self._generate_explanation_template(name, decision, tools)
+        should_use_llm = self.runtime.enabled("policy") if use_llm is None else use_llm
+        if should_use_llm:
+            try:
+                return self._compile_online(policy_id, name, full_text, priority)
+            except LLMError:
+                if not self.runtime.fallback_to_offline:
+                    raise
+                self.last_mode = "offline_fallback"
+                self.last_call_metadata = {"fallback": "offline"}
+                fallback = self._compile_offline(policy_id, name, full_text, priority)
+                fallback.enabled = False
+                return fallback
 
-            if priority is None:
-                priority = {"BLOCK": 1, "ASK_APPROVAL": 2, "ALLOW": 3}.get(
-                    decision, 2
+        self.last_mode = "offline_rules"
+        self.last_call_metadata = None
+        return self._compile_offline(policy_id, name, full_text, priority)
+
+    def _compile_online(
+        self,
+        policy_id: str,
+        name: str,
+        full_text: str,
+        priority: int | None,
+    ) -> CompiledRule:
+        response = self.runtime.generate(
+            agent_name="policy",
+            purpose="natural_language_policy_compilation",
+            prompt_version=self.PROMPT_VERSION,
+            system_instruction=self.SYSTEM_PROMPT,
+            prompt=prompt_json(
+                {
+                    "policy_id": policy_id,
+                    "policy_name": name,
+                    "policy_text": full_text,
+                    "priority_override": priority,
+                    "supported_tools": list_tool_specs(),
+                    "supported_check_types": list(PolicyCheckType.__args__),
+                },
+                self.runtime.settings.max_input_chars,
+            ),
+            response_model=LLMPolicyCompilation,
+        )
+        candidate = response.output
+        conditions = candidate.conditions.model_dump(exclude_none=True)
+        self._validate_model_conditions(conditions)
+        self.last_call_metadata = response.metadata.to_dict()
+        self.last_mode = "llm_compilation"
+        return CompiledRule(
+            rule_id=policy_id,
+            name=name,
+            description=candidate.description,
+            priority=priority if priority is not None else candidate.priority,
+            enabled=False,
+            tools=list(candidate.tools),
+            conditions=conditions,
+            decision=candidate.decision,
+            risk_level=candidate.risk_level,
+            attack_categories=list(candidate.attack_categories),
+            explanation_template=candidate.explanation_template,
+        )
+
+    def _compile_offline(
+        self,
+        policy_id: str,
+        name: str,
+        full_text: str,
+        priority: int | None,
+    ) -> CompiledRule:
+        tools = self._extract_tools(full_text)
+        decision = self._extract_decision(full_text)
+        risk_level = self._extract_risk_level(full_text)
+        attack_categories = self._extract_attack_categories(full_text)
+        conditions = self._extract_conditions(full_text, tools)
+        explanation = self._generate_explanation_template(name, decision, tools)
+        resolved_priority = priority
+        if resolved_priority is None:
+            resolved_priority = {"BLOCK": 1, "ASK_APPROVAL": 2, "ALLOW": 3}.get(decision, 2)
+        return CompiledRule(
+            rule_id=policy_id,
+            name=name,
+            description=full_text.strip()[:200],
+            priority=resolved_priority,
+            enabled=True,
+            tools=tools,
+            conditions=conditions,
+            decision=decision,
+            risk_level=risk_level,
+            attack_categories=attack_categories,
+            explanation_template=explanation,
+        )
+
+    @staticmethod
+    def _validate_model_conditions(conditions: dict) -> None:
+        operator = conditions.get("operator")
+        checks = conditions.get("checks", [])
+        if operator == "ALWAYS" and checks:
+            raise LLMResponseValidationError("ALWAYS policy condition must not contain checks.")
+        if operator != "ALWAYS" and not checks:
+            raise LLMResponseValidationError("Conditional policy must contain at least one check.")
+        allowed_roots = {"arguments", "external_context", "user_request", "proposed_tool_call"}
+        value_required = {"equals", "count_greater_than", "greater_than"}
+        for check in checks:
+            if check.get("check") in value_required and check.get("value") is None:
+                raise LLMResponseValidationError(
+                    f"Policy check '{check.get('check')}' requires a comparison value."
                 )
-
-            rule = CompiledRule(
-                rule_id=policy_id,
-                name=name,
-                description=full_text.strip()[:200],
-                priority=priority,
-                enabled=True,
-                tools=tools,
-                conditions=conditions,
-                decision=decision,
-                risk_level=risk_level,
-                attack_categories=attack_categories,
-                explanation_template=explanation,
-            )
-
-            return rule
-
-        except Exception as e:
-            self.errors.append(f"Failed to compile {policy_id} ({name}): {str(e)}")
-            return None
+            alternatives = str(check.get("field", "")).split("|")
+            if any(part.strip().split(".", 1)[0] not in allowed_roots for part in alternatives):
+                raise LLMResponseValidationError(
+                    "Policy condition contains an unsupported field path."
+                )
 
     def compile_from_file(self, filepath: str) -> CompilationResult:
         """
@@ -382,11 +515,11 @@ class PolicyCompilerAgent:
                 rules=[],
             )
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             content = f.read()
 
         # Split by policy sections (## Policy N: ...)
-        policy_sections = re.split(r'(?=## Policy \d+)', content)
+        policy_sections = re.split(r"(?=## Policy \d+)", content)
         policy_sections = [s.strip() for s in policy_sections if s.strip()]
 
         total = 0
@@ -398,7 +531,7 @@ class PolicyCompilerAgent:
         for section in policy_sections:
             # Extract policy number and name
             policy_text = section.split("\n---", 1)[0].strip()
-            header_match = re.match(r'## Policy (\d+):\s*(.+?)(?:\n|$)', policy_text)
+            header_match = re.match(r"## Policy (\d+):\s*(.+?)(?:\n|$)", policy_text)
             if not header_match:
                 continue
 
@@ -438,7 +571,7 @@ class PolicyCompilerAgent:
                 rules=[],
             )
 
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
 
         rules_data = data.get("rules", [])
@@ -502,9 +635,7 @@ class PolicyCompilerAgent:
 
         # Check for duplicate rule IDs
         rule_ids = [r.rule_id for r in self.compiled_rules]
-        duplicates = set(
-            rid for rid in rule_ids if rule_ids.count(rid) > 1
-        )
+        duplicates = {rule_id for rule_id, count in Counter(rule_ids).items() if count > 1}
         if duplicates:
             warnings.append(f"Duplicate rule IDs found: {duplicates}")
 
@@ -518,9 +649,7 @@ class PolicyCompilerAgent:
             checks = rule.conditions.get("checks", [])
             operator = rule.conditions.get("operator", "")
             if not checks and operator != "ALWAYS":
-                warnings.append(
-                    f"{rule.rule_id}: No condition checks and operator is not ALWAYS."
-                )
+                warnings.append(f"{rule.rule_id}: No condition checks and operator is not ALWAYS.")
 
         # Check all 8 tools are covered
         covered_tools = set()
@@ -536,12 +665,10 @@ class PolicyCompilerAgent:
             for tool in rule.tools:
                 if tool not in tool_decisions:
                     tool_decisions[tool] = []
-                tool_decisions[tool].append(
-                    (rule.rule_id, rule.decision, rule.priority)
-                )
+                tool_decisions[tool].append((rule.rule_id, rule.decision, rule.priority))
 
         for tool, entries in tool_decisions.items():
-            decisions = set(d for _, d, _ in entries)
+            decisions = {decision for _, decision, _ in entries}
             if len(decisions) > 1:
                 decisions_by_priority = {}
                 for _, decision, priority in entries:
