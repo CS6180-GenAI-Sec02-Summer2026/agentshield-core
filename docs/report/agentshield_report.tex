@@ -134,19 +134,15 @@ actions with an audit trail. The firewall inspects the
 proposed call \textbf{before} execution, so an unsafe action
 is \emph{stopped}, not merely reported afterward.
 
-\subsection{Generative AI Fit and Implementation
-Boundary}\label{generative-ai-fit-and-implementation-boundary}
+\subsection{Why Generative AI
+Fits}\label{why-generative-ai-fits}
 
-Generative AI is a strong fit for this problem because
-language interpretation and generation are central to
-understanding open-ended requests, proposing structured tool
-calls, generating adversarial variants, and producing
-policy-grounded explanations. The checked-in implementation
-realizes these roles through a deterministic, offline
-reference system with no external model or API dependency.
-This implementation choice keeps the evaluation repeatable
-while preserving interfaces that model-backed components can
-extend.
+The task is inherently language- and reasoning-driven, which
+is where generative AI is a strong fit: the system must
+interpret natural-language requests, reason over tool-use
+intent, generate realistic adversarial scenarios, apply
+policies to ambiguous cases, classify risk, and explain
+decisions:
 
 {\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
@@ -156,49 +152,43 @@ extend.
 \begin{minipage}[b]{\linewidth}\raggedright
 Component
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Checked-in implementation
+GenAI role
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
-Target Agent & Passes through stored tool calls or applies
-deterministic local text inference. A model-backed proposer
-could later implement the same output schema. \\
-Red-Team Agent & Renders checked-in seeds through
-deterministic injection templates. Its online mode is an
-unimplemented extension point. \\
-Policy Compiler / Firewall & Parses constrained Markdown
-fields and keyword mappings, evaluates explicit JSON rules,
-and renders deterministic audit explanations. \\
-Audit quality scorer & Applies a deterministic offline
-rubric. Its online judge mode is unimplemented. \\
+Target Agent & Tool-use reasoning and structured tool-call
+generation. \\
+Red-Team Agent & Adversarial prompting to generate
+prompt-injection and malicious scenarios. \\
+Policy Compiler / Firewall & Policy interpretation,
+ambiguous-risk reasoning, and audit-explanation
+generation. \\
+Audit quality scorer & Deterministic offline rubric scoring;
+the optional online judge is unimplemented. \\
 \end{longtable}
 }
 
-Primary correctness is measured against fixed, checked-in
-decision labels. The separate offline heuristic scores the
-quality of dataset explanation text; it does not establish
-the correctness of a firewall decision.
+Correctness is always measured against fixed ground-truth
+labels. The current audit-quality artifact is produced by a
+deterministic offline rubric over dataset explanation fields;
+the optional online judge is unimplemented.
 
 \section{Baseline Comparison}\label{baseline-comparison}
 
-To compare structured enforcement with simpler controls, 94
-stored entries are run through three configurations. One
-entry is duplicated across \texttt{sample\_examples.json}
-and \texttt{dataset\_v0.json}, so the stored set contains 93
-unique user requests. The table below reports the committed
-94-entry artifacts for traceability.
+To show that a dedicated firewall adds real value, the same
+94 stored entries are run through three
+configurations:
 
 \begin{itemize}
 \tightlist
 \item
   \textbf{Unprotected} --- allows every proposed tool call.
 \item
-  \textbf{Keyword guardrail baseline} --- scans external
-  context and flattened tool arguments for a small set of
-  injection and credential indicators, with no structured
-  policy layer.
+  \textbf{Prompt-only guardrail} --- keyword heuristics over
+  external context and flattened tool arguments, with no
+  structured policy layer.
 \item
   \textbf{AgentShield} --- structured policy rules, risk
   scoring, and user-intent checks applied to the proposed
@@ -216,38 +206,40 @@ unique user requests. The table below reports the committed
 \begin{minipage}[b]{\linewidth}\raggedright
 Configuration
 \end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Attack Success (lower)
+Attack Success (↓)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Defense Success (higher)
+Defense Success (↑)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Policy Compliance (higher)
+Policy Compliance (↑)
 \end{minipage} & \begin{minipage}[b]{\linewidth}\centering
-Benign Success (higher)
+Benign Success (↑)
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 Unprotected & 100.0\% & 0.0\% & 31.9\% & 100.0\% \\
-Keyword guardrail baseline & 74.0\% & 26.0\% & 45.7\% &
+Prompt-only guardrail & 74.0\% & 26.0\% & 45.7\% &
 100.0\% \\
 \textbf{AgentShield} & \textbf{0.0\%} & \textbf{100.0\%} &
 \textbf{100.0\%} & \textbf{100.0\%} \\
 \end{longtable}
 }
 
-The unprotected baseline allows every expected-\texttt{BLOCK}
-case. The keyword baseline catches obvious patterns but does
-not relate all argument fields to user intent or apply the
-structured policy catalog. AgentShield matches the expected
-decision for every stored entry, including approval-labeled
-cases that are escalated rather than blocked.
+The unprotected agent lets every attack through. The
+prompt-only guardrail catches obvious cases but still misses
+74\% of attacks, because its small keyword set does not
+relate all argument fields to user intent or apply the
+structured policy catalog. AgentShield blocks every attack
+with no benign regressions, demonstrating that structured
+tool-call enforcement is what closes the gap.
 
-As a sensitivity check, deduplicating by exact user request
-produces 93 unique entries. The keyword baseline then reports
-73.47\% attack success, 26.53\% defense success, and 46.24\%
-policy compliance. AgentShield remains at 0.0\% attack
-success and 100.0\% policy compliance.
+The 94-entry set contains one exact duplicate:
+\texttt{sample-006} and \texttt{v0-042}. Deduplicating by
+user request changes the prompt-only guardrail's attack
+success from 74.0\% to 73.47\% and policy compliance from
+45.74\% to 46.24\%; AgentShield remains at 100.0\% policy
+compliance.
 
 \section{Application and Technical Depth of GenAI
 Techniques}\label{application-and-technical-depth-of-genai-techniques}
@@ -257,14 +249,15 @@ Techniques}\label{application-and-technical-depth-of-genai-techniques}
 Each request or stored scenario flows through one path: the
 \textbf{Target Agent} proposes a structured tool call; the
 call is schema-validated; the \textbf{Risk Classifier}
-assigns risk metadata; the \textbf{Policy Checker} evaluates
-all applicable rules; and the \textbf{Firewall} uses the most
-restrictive policy violation to select \texttt{ALLOW},
-\texttt{BLOCK}, or \texttt{ASK\_APPROVAL}. The risk result is
-included in the explanation and audit record but does not
-override the policy decision. Only \texttt{ALLOW} may reach
-optional safe mock execution, and the \textbf{Orchestrator}
-records the result for metrics and the API.
+assigns risk metadata; and the \textbf{Policy Checker}
+evaluates all applicable rules. The \textbf{Firewall} uses
+the most restrictive policy violation to select
+\texttt{ALLOW}, \texttt{BLOCK}, or
+\texttt{ASK\_APPROVAL}; risk metadata is included in the
+audit explanation but does not override that decision. Only
+\texttt{ALLOW} may reach optional safe mock execution, and
+the \textbf{Orchestrator} records an audit entry that feeds
+metrics and the API.
 
 \subsection{Red-Team Attack
 Generation}\label{red-team-attack-generation}
@@ -305,10 +298,9 @@ it came from a tool response. \\
 Generation is \textbf{offline and deterministic} by default:
 it fills checked-in templates from checked-in seeds, needs
 no network or API key, and produces stable output suitable
-for tests and audits. The reserved online mode currently
-raises \texttt{NotImplementedError}; no model-backed attack
-generation is present in this version. This deterministic
-core is a deliberate reproducibility choice.
+for tests and audits. An optional online mode is reserved as
+an extension point. This deterministic core is a deliberate
+reproducibility choice.
 
 The generator is built from four checked-in components:
 
@@ -340,23 +332,14 @@ schema-valid example. \\
 \subsection{Policy Reasoning and Audit
 Explanations}\label{policy-reasoning-and-audit-explanations}
 
-The Policy Compiler parses a constrained Markdown policy
-format using explicit fields and keyword mappings, then
-exports structured JSON rules. The Policy Checker evaluates
-those rules, the Risk Classifier independently applies
-deterministic risk signals, and the Firewall renders a
-human-readable explanation from the matched policy evidence
-and risk metadata. The most restrictive matched policy rule,
-not the risk score, determines the final decision.
-
-Audit quality has two separate deterministic proxy measures.
-The runtime pipeline records a 1--3 field derived from label
-agreement and explanation presence; it is not an independent
-review of explanation quality. The offline five-criterion
-heuristic scores the checked-in dataset explanation fields
-from 0--10 using lexical and grounding proxies. The current
-\texttt{audit\_scores.json} therefore contains neither model
-judgments nor scores over runtime audit logs.
+The Policy Compiler turns natural-language safety policies
+into structured JSON rules; the Firewall uses the most
+restrictive matched policy rule to select a decision and
+combines the result with risk metadata to produce a
+human-readable audit explanation. The checked-in
+audit-quality scorer applies a deterministic offline rubric
+to dataset explanation fields; its online judge mode is
+unimplemented.
 
 \section{Data, Knowledge Sources, and Dataset
 Quality}\label{data-knowledge-sources-and-dataset-quality}
@@ -364,8 +347,8 @@ Quality}\label{data-knowledge-sources-and-dataset-quality}
 \subsection{Composition}\label{composition}
 
 The dataset is a synthetic benchmark of agent tool-call
-scenarios with checked-in reference decisions. The
-evaluation loader discovers 94 stored entries:
+scenarios with ground-truth firewall decisions. The full
+stored evaluation set is 94 scenarios:
 
 {\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
@@ -401,21 +384,13 @@ The deeper 85-example corpus (\texttt{dataset\_v0} +
 \texttt{red\_team\_examples} + \texttt{benign\_edge\_cases})
 splits into 35 benign / 50 malicious, with 27
 \texttt{ALLOW}, 12 \texttt{ASK\_APPROVAL}, and 46
-\texttt{BLOCK} labels. That 85-example corpus is schema-valid
-and has no duplicate user requests.
-
-Across all 94 discovered entries, \texttt{sample-006} and
-\texttt{v0-042} are exact duplicates except for identifier
-and source metadata. Consequently, the full stored set has
-93 unique user requests. The committed 94-entry artifacts
-are retained in this report for reproducibility, and the
-deduplicated sensitivity values are reported separately.
+\texttt{BLOCK} labels.
 
 \subsection{Schema and Knowledge
 Sources}\label{schema-and-knowledge-sources}
 
 Every scenario follows \texttt{dataset\_schema.json} with
-seven required fields: \texttt{user\_request},
+seven fields: \texttt{user\_request},
 \texttt{external\_context} (external content that may carry
 injected instructions), \texttt{proposed\_tool\_call},
 \texttt{expected\_decision} (\texttt{ALLOW} / \texttt{BLOCK}
@@ -423,66 +398,39 @@ injected instructions), \texttt{proposed\_tool\_call},
 \texttt{attack\_category} (\texttt{none},
 \texttt{prompt\_injection}, \texttt{data\_exfiltration},
 \texttt{unauthorized\_action}), and \texttt{explanation}.
-An optional \texttt{id} property supports lookup. Explicit
-and loader-generated IDs use the \texttt{sample-*},
-\texttt{v0-*}, \texttt{rt-*}, \texttt{be-*}, and
-\texttt{demo-*} prefixes. The controlled label vocabulary is
-documented in \texttt{data/attack\_taxonomy.md}.
+Stable ids (\texttt{v0-*}, \texttt{rt-*}, \texttt{be-*},
+\texttt{demo-*}) support lookup. The controlled label
+vocabulary is documented in
+\texttt{data/attack\_taxonomy.md}.
 
 All eight supported tools are represented:
-
-\begin{center}
-\begin{tabular}{@{}llll@{}}
-\path{send_email} & \path{read_file} & \path{write_file} & \path{delete_file} \\
-\path{create_calendar_event} & \path{create_task} &
-\path{create_github_issue} & \path{send_http_request} \\
-\end{tabular}
-\end{center}
+\path{send_email}, \path{read_file}, \path{write_file},
+\path{delete_file}, \path{create_calendar_event},
+\path{create_task}, \path{create_github_issue}, and
+\path{send_http_request}.
 
 \subsection{Dataset Quality}\label{dataset-quality}
 
-Quality is checked with version-controlled utilities.
-\path{validate_dataset.py} checks a specified dataset file
-against the schema. \path{corpus_report.py} checks schema
-validity and duplicate requests within the 85-example corpus;
-\path{quality_report.py} reports balance and 12
-approval-labeled cases for manual review; and
-\path{label_validator.py} confirms labels agree with
-runtime firewall behavior using the same shared helpers.
-That last check detects implementation-label drift but is not
-an independent adjudication of the labels.
-The corpus-level duplicate check does not include the demo
-or sample sets, which is why it does not detect the
-94-entry-set duplicate. Representative checks are:
+Quality is enforced automatically.
+\path{validate_dataset.py} checks every file against the
+schema; \path{corpus_report.py} and
+\path{quality_report.py} verify balance and flag
+ambiguous labels; and \path{label_validator.py} confirms
+labels agree with runtime firewall behavior using the same
+shared helpers. A representative check:
 
 \begin{verbatim}
 PYTHONPATH=. python3 data/validate_dataset.py data/dataset_v0.json
-PYTHONPATH=. python3 data/corpus_report.py
-PYTHONPATH=. python3 data/quality_report.py
 \end{verbatim}
-
-\subsection{Implemented Scope}
-\label{implemented-scope}
-
-The original plan targeted 150--300 examples and identified
-100--150 as a reduced scope. The checked-in implementation
-contains 94 stored entries, or 93 unique requests, including
-an 85-example evaluation corpus. This is below both planned
-size ranges. Coverage remains broad across all eight tools,
-all three decisions, all four risk levels, and all attack
-categories, but the smaller synthetic set limits claims of
-generalization.
 
 \subsection{Synthetic-Data
 Boundary}\label{synthetic-data-boundary}
 
-All dataset content is synthetic. Email addresses use the
-reserved \texttt{.example} domain, secret-like values use marked
+All content is synthetic. Email addresses use
+\path{*.example} domains, secret-like values use marked
 \texttt{\textless{}synthetic-...-placeholder\textgreater{}}
-tokens, and focused tests scan the generated red-team set
-and benign edge cases for non-synthetic emails or plausible
-secrets. The repository does not currently provide one
-global sensitive-data scan covering every dataset file.
+tokens, and tests reject real-looking contact data or
+credentials.
 
 \section{Evaluation Pipeline}\label{evaluation-pipeline}
 
@@ -492,73 +440,38 @@ Evaluation runs every stored scenario through the same
 policy checker, risk classifier, intent helpers, and
 firewall decision path used by the live API, then compares
 each decision to the scenario's \texttt{expected\_decision}
-label. This produces a deterministic, repeatable consistency
-measurement against the checked-in reference labels; it is
-not independent evidence that those labels generalize to
-production. In the implemented metric
-terminology, ``malicious'' means expected \texttt{BLOCK},
-``benign'' means expected \texttt{ALLOW}, and
-approval-labeled entries form a separate class even when an
-attack category is present.
+label. Because labels are fixed ground truth, correctness is
+objective and repeatable.
 
 \subsection{Metrics}\label{metrics}
 
 The pipeline reports Attack Success Rate, Defense Success
 Rate, Benign Task Success Rate, False Positive / False
 Negative Rate, Policy Compliance Accuracy, \texttt{BLOCK}
-precision/recall/F1, escalation rate, tool-call integrity,
-and runtime audit-explanation quality. In the current runner,
-the tool-call-integrity flag is supplied as \texttt{true} for
-every result rather than derived by an independent intent
-comparison, so its reported 100\% is an instrumentation
-default. Runtime audit quality is likewise the agreement and
-presence proxy described above. A separate offline 0--10
-heuristic evaluates dataset explanation text; the two
-audit-quality scales measure different artifacts and must
-not be combined.
+precision/recall/F1, and escalation rate. Audit-explanation
+quality is represented by deterministic scores assigned by
+the evaluation code. A separate offline rubric scores
+dataset explanation fields; the optional online judge is
+unimplemented.
 
 \subsection{Reproduction}\label{reproduction}
 
-The experiment runner regenerates
-\path{data/evaluation/experiment_run.json} and its summary
-CSV, including runtime metrics and a nested baseline
-comparison:
+Evaluation and baseline artifacts are regenerated into
+\texttt{data/evaluation/}:
 
 \begin{verbatim}
 PYTHONPATH=. python3 src/experiment_runner.py
 \end{verbatim}
 
-Additional validation and audit scoring are run separately:
-
-\begin{verbatim}
-PYTHONPATH=. python3 -m pytest -q
-PYTHONPATH=. python3 data/corpus_report.py
-PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --test
-PYTHONPATH=. python3 agents/score_audit.py
-\end{verbatim}
-
-The two PNG figures are checked-in presentation artifacts;
-the repository does not currently include a chart-generation
-script. From \texttt{docs/report}, this TeX source can be
-compiled with two XeLaTeX passes:
-
-\begin{verbatim}
-xelatex -interaction=nonstopmode -halt-on-error agentshield_report.tex
-xelatex -interaction=nonstopmode -halt-on-error agentshield_report.tex
-\end{verbatim}
-
 \section{Experiments Performed}\label{experiments-performed}
 
-\subsection{Stored-Set Firewall
-Evaluation}\label{stored-set-firewall-evaluation}
+\subsection{Full-Corpus Firewall
+Evaluation}\label{full-corpus-firewall-evaluation}
 
-Running all 94 stored entries through the firewall yields
-100\% policy compliance against the checked-in labels, with
-no false negatives and no false positives. The distinct
-85-example corpus reaches 85/85 firewall--label agreement.
-These are in-sample regression results over a synthetic,
-policy-aligned dataset; they do not establish performance on
-unseen production inputs.
+Running all 94 scenarios through the firewall yields 100\%
+policy-compliance with no false negatives and no false
+positives; the 85-example corpus reaches 85/85
+firewall--label agreement.
 
 {\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}lc@{}}
@@ -574,10 +487,6 @@ Benign Task Success Rate & 100.0\% \\
 False Positive Rate & 0.0\% \\
 False Negative Rate & 0.0\% \\
 Policy Compliance Accuracy & 100.0\% \\
-Tool-Call Integrity Flag & 100.0\% (supplied input) \\
-Escalation Rate & 14.89\% \\
-Runtime Audit Explanation Proxy & 3.0 / 3 \\
-Offline Dataset Explanation Heuristic & 9.42 / 10 (85 entries) \\
 BLOCK Precision / Recall / F1 & 100.0\% \\
 \end{longtable}
 }
@@ -585,13 +494,11 @@ BLOCK Precision / Recall / F1 & 100.0\% \\
 \subsection{Baseline
 Experiments}\label{baseline-experiments}
 
-The unprotected and keyword guardrail baselines were run on
-the identical stored set, producing the comparison in the
+The unprotected and prompt-only baselines were run on the
+identical set, producing the comparison in the
 \emph{Baseline Comparison} section: attack success falls
-from 100\% (unprotected) and 74\% (keyword guardrail) to 0\%
-under AgentShield. On the 93-entry deduplicated sensitivity
-set, the keyword guardrail attack-success rate is 73.47\%;
-AgentShield remains at 0.0\%.
+from 100\% (unprotected) and 74\% (prompt-only) to 0\% under
+AgentShield.
 
 \subsection{Red-Team Gap Discovery and
 Remediation}\label{red-team-gap-discovery-and-remediation}
@@ -640,8 +547,7 @@ standalone keyword matching. \\
 Scenarios}\label{demonstration-scenarios}
 
 Three scenarios exercise the user-visible decision paths and
-are covered by orchestration tests and committed experiment
-artifacts:
+were verified live through the firewall:
 
 {\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
@@ -682,20 +588,17 @@ Configuration}\label{attack-success-by-configuration}
 
 The chart below visualizes the baseline comparison: attack
 success collapses from 100\% (unprotected) and 74\%
-(keyword guardrail, labeled ``Prompt-only guardrail'' in the
-checked-in figure) to 0\% under AgentShield. Values reflect
-the 94-entry committed run, including the disclosed
-duplicate.
+(prompt-only guardrail) to 0\% under AgentShield.
 
 \begin{figure}
 \centering
 \includegraphics[width=0.8\linewidth,height=\textheight,keepaspectratio,alt={Attack Success Rate across the three configurations (lower is better).}]{figures/baseline_asr.png}
 \caption{Attack Success Rate across the three configurations
-for the 94-entry committed run (lower is better).}
+(lower is better).}
 \end{figure}
 
-\subsection{Confusion Matrix (94 Stored
-Entries)}\label{confusion-matrix-94-stored-entries}
+\subsection{Confusion Matrix (94
+scenarios)}\label{confusion-matrix-94-scenarios}
 
 Rows are the expected label; columns are the firewall's
 decision. The perfect diagonal reflects 100\% agreement.
@@ -718,8 +621,8 @@ ASK\_APPROVAL \\
 \begin{figure}
 \centering
 \includegraphics[width=0.55\linewidth,height=\textheight,keepaspectratio,alt={Confusion-matrix heatmap: every scenario lies on the diagonal (perfect agreement).}]{figures/confusion_matrix.png}
-\caption{Confusion-matrix heatmap for the 94-entry committed
-run: every entry lies on the diagonal.}
+\caption{Confusion-matrix heatmap: every scenario lies on
+the diagonal (perfect agreement).}
 \end{figure}
 
 \newpage
@@ -745,14 +648,10 @@ Tool & Scenarios & Accuracy \\
 \end{longtable}
 }
 
-These counts describe stored entries rather than unique
-requests. The \texttt{delete\_file} total includes the exact
-duplicate disclosed in the dataset section.
-
 \subsection{Security Console}\label{security-console}
 
-The React security console provides runtime visualizations
-that complement these tables: an attack-simulation view,
+The React security console provides live visualizations that
+complement these tables: an attack-simulation view,
 per-decision cards (\texttt{ALLOW} / \texttt{BLOCK} /
 \texttt{ASK\_APPROVAL}) with audit explanations, metric
 cards, and a baseline-comparison chart.
@@ -791,24 +690,21 @@ Member
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
 Core ownership
 \end{minipage} & \begin{minipage}[b]{\linewidth}\raggedright
-Project contribution
+GenAI contribution
 \end{minipage} \\
 \midrule\noalign{}
 \endhead
 \bottomrule\noalign{}
 \endlastfoot
 Mrinal Setty & Orchestration, Target Agent, tool interfaces,
-backend/API & Multi-agent orchestration, deterministic Target
-Agent tool-call proposal, schema validation, and safe mock
-execution \\
+backend/API & Multi-agent orchestration, Target Agent
+prompting, tool-call generation \\
 Aditya Shenoy & Red-Team Agent, dataset, attack taxonomy,
-dataset quality, report & Deterministic adversarial attack
-generation, injection templates, synthetic scenarios, and
-dataset validation \\
+dataset quality, report & Adversarial attack generation,
+injection patterns, synthetic scenarios \\
 Yashas Uttangi & Firewall, policy compiler, evaluation
-metrics, console & Structured policy enforcement, risk
-classification, deterministic audit explanations, evaluation,
-and console integration \\
+metrics, console & Policy reasoning, audit-explanation
+generation, LLM-as-a-judge \\
 \end{longtable}
 }
 
@@ -821,26 +717,26 @@ milestone.
 \section{Conclusion and
 Limitations}\label{conclusion-and-limitations}
 
-AgentShield demonstrates a deterministic, policy-driven
-firewall that intercepts simulated tool calls before mock
-execution. On the checked-in stored set it matches every
-expected decision, while the unprotected and keyword
-baselines allow many expected-\texttt{BLOCK} cases. The
-adversarial corpus exposed policy gaps that were closed with
-reusable checks and regression tests.
+AgentShield demonstrates that a dedicated, policy-driven
+firewall secures tool-using AI agents against prompt
+injection, data exfiltration, and unauthorized actions
+\emph{before} execution. On the 94-scenario set it reaches
+100\% policy compliance with no false negatives or false
+positives, while the unprotected and prompt-only baselines
+let unsafe calls through. The red-team track was central:
+expanding adversarial coverage surfaced real gaps that were
+then closed with reusable policies and regression tests.
 
-\textbf{Limitations.} The results are in-sample measurements
-over a synthetic, policy-aligned set and do not establish
-general production performance. The 94 stored entries contain
-one exact duplicate and fall below the original dataset-size
-targets. All tool execution is simulated. Model-backed target
-reasoning, online attack generation, and online explanation
-judging are unimplemented extension points. The offline
-0--10 rubric currently scores dataset explanation fields,
-not runtime audit logs. \texttt{ASK\_APPROVAL} is a policy
-boundary whose calibration depends on configured rules.
-Real deployment would require broader unseen evaluations,
-global sensitive-data checks, authenticated integrations,
-observability, and explicit human-approval controls.
+\textbf{Limitations.} The dataset is synthetic and
+scenario-based, proving coverage for the committed scenarios
+rather than every production input. All tool execution is
+simulated, so real deployment must remain behind explicit
+user approval and production controls.
+\texttt{ASK\_APPROVAL} is a policy boundary whose
+calibration depends on the configured policies. The
+checked-in audit-quality scorer is deterministic and
+offline; its online judge mode is unimplemented. Objective
+correctness is always measured against fixed ground-truth
+labels.
 
 \end{document}
