@@ -137,15 +137,16 @@ is \emph{stopped}, not merely reported afterward.
 \subsection{Generative AI Fit and Implementation
 Boundary}\label{generative-ai-fit-and-implementation-boundary}
 
-Generative models are relevant to future versions of this
-problem because model-backed agents can interpret open-ended
-requests, propose structured tool calls, generate adversarial
-variants, and assist with subjective explanation review. The
-checked-in implementation is deliberately different: it is a
-deterministic, offline reference system with no external model
-or API dependency. This boundary keeps the current evaluation
-repeatable and must not be confused with implemented
-model-backed behavior.
+Generative AI is a strong fit for this problem because
+language interpretation and generation are central to
+understanding open-ended requests, proposing structured tool
+calls, generating adversarial variants, and producing
+policy-grounded explanations. The checked-in implementation
+realizes these roles through a deterministic, offline
+reference system with no external model or API dependency.
+This implementation choice keeps the evaluation repeatable
+while preserving interfaces that model-backed components can
+extend.
 
 {\def\LTcaptype{none} % do not increment counter
 \begin{longtable}[]{@{}
