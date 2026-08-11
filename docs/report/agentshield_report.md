@@ -251,6 +251,13 @@ through the firewall:
 
 # Visualizations and Tabular Representations
 
+## Attack Success by Configuration
+
+The chart below visualizes the baseline comparison: attack success collapses
+from 100% (unprotected) and 74% (prompt-only guardrail) to 0% under AgentShield.
+
+![Attack Success Rate across the three configurations (lower is better).](figures/baseline_asr.png){width=80%}
+
 ## Confusion Matrix (94 scenarios)
 
 Rows are the expected label; columns are the firewall's decision. The perfect
@@ -261,6 +268,8 @@ diagonal reflects 100% agreement.
 | **ALLOW** | 30 | 0 | 0 |
 | **BLOCK** | 0 | 50 | 0 |
 | **ASK_APPROVAL** | 0 | 0 | 14 |
+
+![Confusion-matrix heatmap: every scenario lies on the diagonal (perfect agreement).](figures/confusion_matrix.png){width=55%}
 
 ## Per-Tool Accuracy
 
