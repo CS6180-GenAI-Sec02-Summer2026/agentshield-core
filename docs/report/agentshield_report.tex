@@ -67,7 +67,8 @@
 \setlength{\emergencystretch}{3em} % prevent overfull lines
 \providecommand{\tightlist}{%
   \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
-\usepackage[margin=1in]{geometry}
+\usepackage[top=1in,bottom=1.3in,left=1in,right=1in]{geometry}
+\raggedbottom
 \usepackage{fvextra}
 \DefineVerbatimEnvironment{Highlighting}{Verbatim}{breaklines,breakanywhere,commandchars=\\\{\}}
 \fvset{breaklines=true,breakanywhere=true}
@@ -611,6 +612,8 @@ ASK\_APPROVAL \\
 \caption{Confusion-matrix heatmap: every scenario lies on
 the diagonal (perfect agreement).}
 \end{figure}
+
+\newpage
 
 \subsection{Per-Tool Accuracy}\label{per-tool-accuracy}
 

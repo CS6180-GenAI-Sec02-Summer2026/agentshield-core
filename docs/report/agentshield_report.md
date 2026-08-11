@@ -271,6 +271,10 @@ diagonal reflects 100% agreement.
 
 ![Confusion-matrix heatmap: every scenario lies on the diagonal (perfect agreement).](figures/confusion_matrix.png){width=55%}
 
+```{=latex}
+\newpage
+```
+
 ## Per-Tool Accuracy
 
 | Tool | Scenarios | Accuracy |
