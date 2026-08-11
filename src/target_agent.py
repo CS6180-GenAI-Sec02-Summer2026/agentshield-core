@@ -11,6 +11,7 @@ import re
 from typing import Any
 
 from src.tools import normalize_tool_call
+from src.llm_target_agent import llm_propose_tool_call
 
 
 TARGET_AGENT_SYSTEM_PROMPT = """
@@ -62,6 +63,23 @@ class TargetAgent:
 
         request = scenario.get("user_request", "")
         external_context = scenario.get("external_context") or ""
+
+        # Free-form path: try the LLM target agent first. If no API key is set
+        # or the call fails, fall back to deterministic keyword inference.
+        # (The corpus/graded path never reaches here — it passes through above.)
+        llm_call = llm_propose_tool_call(request, external_context)
+        if llm_call:
+            return TargetAgentResult(
+                proposed_tool_call=normalize_tool_call(llm_call),
+                mode="llm_inference",
+                confidence=0.9,
+                notes=[
+                    "Generated the tool-call proposal with an LLM (gpt-4o-mini).",
+                    "Target Agent did not execute the tool; it only prepared the proposal.",
+                ],
+                output_schema=TARGET_AGENT_OUTPUT_SCHEMA,
+            )
+
         proposed = self._infer_from_text(request, external_context)
         return TargetAgentResult(
             proposed_tool_call=normalize_tool_call(proposed),
