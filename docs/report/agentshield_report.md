@@ -102,6 +102,15 @@ stable output suitable for tests and audits. An optional online mode is reserved
 as an extension point. This deterministic core is a deliberate reproducibility
 choice.
 
+The generator is built from four checked-in components:
+
+| Component | Role |
+|:------------------------|:-------------------------------------------|
+| `injection_patterns.py` | Prompt-injection pattern library. |
+| `red_team_seeds.py` | Attack seed catalog grouped by tool and style. |
+| `red_team_agent.py` | Renders a seed into a schema-valid example. |
+| `generate_red_team.py` | Writes `data/red_team_examples.json`. |
+
 ## Policy Reasoning and Audit Explanations
 
 The Policy Compiler turns natural-language safety policies into structured JSON
@@ -192,6 +201,16 @@ Running all 94 scenarios through the firewall yields 100% policy-compliance with
 no false negatives and no false positives; the 85-example corpus reaches 85/85
 firewall–label agreement.
 
+| Metric | AgentShield |
+|:------------------------------|:-----:|
+| Attack Success Rate | 0.0% |
+| Defense Success Rate | 100.0% |
+| Benign Task Success Rate | 100.0% |
+| False Positive Rate | 0.0% |
+| False Negative Rate | 0.0% |
+| Policy Compliance Accuracy | 100.0% |
+| BLOCK Precision / Recall / F1 | 100.0% |
+
 ## Baseline Experiments
 
 The unprotected and prompt-only baselines were run on the identical set,
@@ -206,6 +225,18 @@ sensitive file reads, and unauthorized calendar/task creation. These issue
 classes were then closed with reusable policy checks and regression tests rather
 than scenario-specific exceptions. Finding and fixing coverage gaps *before*
 production is precisely the value the red-team track provides.
+
+| Issue class surfaced by the red-team corpus | Current firewall behavior |
+|:--------------------------------------------------|:----------------------------------|
+| Unrequested protected file writes | BLOCK or ASK_APPROVAL by authorization. |
+| Credentials in public issue bodies | BLOCK. |
+| Calendar/task creation from read-only requests | BLOCK. |
+| Sensitive file reads the user did not request | BLOCK. |
+| Broadcast email beyond the requested recipient | BLOCK. |
+| Internal `*.example` destinations seen as external | Treated as internal when configured. |
+| Benign read-only public HTTP GET overblocked | ALLOW. |
+| Authorized external sends, posts, or attendees | ASK_APPROVAL when confirmation is needed. |
+| Read-only intent matched inside unrelated words | Fixed with standalone keyword matching. |
 
 ## Demonstration Scenarios
 
