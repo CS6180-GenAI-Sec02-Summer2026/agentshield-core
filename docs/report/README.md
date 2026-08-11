@@ -9,16 +9,22 @@ as one integrated project.
 | File | Purpose |
 | --- | --- |
 | `dataset.md` | Dataset composition, schema, label rules, tool coverage, and quality checks. |
-| `red_team_method.md` | Deterministic adversarial generation method and coverage. |
+| `red_team_method.md` | Online/offline adversarial generation method and coverage. |
 | `evaluation.md` | Firewall-vs-label results, metric summary, fixed issue classes, and residual scope. |
 | `demo.md` | Three runnable demo scenarios covering `ALLOW`, `BLOCK`, and `ASK_APPROVAL`. |
+| `agentshield_report.md` | Canonical report source. |
+| `agentshield_report.tex` / `.pdf` | Generated submission artifacts. |
+| `report_header.tex` | Shared LaTeX layout controls for report generation. |
 
 ## Project Overview
 
 AgentShield includes:
 
-- A deterministic backend workflow for scenario ingestion, tool-call proposal,
-  policy checking, risk scoring, audit logging, and safe mock execution.
+- A provider-neutral model runtime for target generation, red-team generation,
+  policy compilation, semantic risk, audit explanations, and explanation
+  judging, configured through one provider, model, and API-key contract.
+- An authoritative deterministic policy boundary plus explicit offline modes
+  for reproducible scenario evaluation.
 - A synthetic 94-scenario stored evaluation set: 3 demo scenarios, 6 sample
   scenarios, and an 85-example corpus for deeper evaluation.
 - A structured safety-policy rule set covering prompt injection, data
@@ -40,9 +46,10 @@ Use this path for a complete project review:
 4. Safety policy catalog: [`../safety_policies.md`](../safety_policies.md)
 5. Rule format: [`../policy_rule_format.md`](../policy_rule_format.md)
 6. Metrics definitions: [`../evaluation_metrics.md`](../evaluation_metrics.md)
-7. Dataset details: [`dataset.md`](dataset.md)
-8. Evaluation summary: [`evaluation.md`](evaluation.md)
-9. Demo path: [`demo.md`](demo.md)
+7. Model runtime and key setup: [`../model_integration.md`](../model_integration.md)
+8. Dataset details: [`dataset.md`](dataset.md)
+9. Evaluation summary: [`evaluation.md`](evaluation.md)
+10. Demo path: [`demo.md`](demo.md)
 
 ## Validation Snapshot
 
@@ -55,8 +62,15 @@ PYTHONPATH=. python3 src/test_orchestrator.py
 PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --test
 ```
 
-The committed evaluation artifacts under `data/evaluation/` report 100% policy
-compliance for the 94 stored scenarios.
+Regenerate the synchronized TeX and PDF artifacts with:
+
+```bash
+./scripts/build_report.sh
+```
+
+The committed offline evaluation artifacts under `data/evaluation/` report
+100% policy compliance for the 94 fixed stored scenarios. Online generation
+quality is a separate runtime concern and is not inferred from that result.
 
 ## Scope Boundary
 

@@ -155,8 +155,8 @@ python data/quality_report.py   # label distribution + debatable-decision flags
 ## Audit Rubric and Judge
 
 `audit_rubric.md` defines a five-criterion rubric (0-2 each) for the **quality of
-an audit explanation** - not the correctness of the decision. An offline judge
-scores explanations against it:
+an audit explanation** - not the correctness of the decision. The committed
+artifact uses the reproducible offline scorer:
 
 ```bash
 python agents/score_audit.py       # scores every explanation -> audit_scores.json
@@ -165,6 +165,10 @@ python agents/judge_vs_manual.py   # judge vs manual agreement
 
 On the corpus the judge averages 9.4/10; see the
 [audit judge](../agents/README.md#audit-judge).
+
+Online scenario runs can use the model-backed judge through the shared runtime.
+Those scores include provider metadata and are not substituted into the fixed
+offline corpus artifact.
 
 ## Synthetic Data Boundary
 

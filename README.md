@@ -1,8 +1,8 @@
 # agentshield-core
 
-Core backend for AgentShield: policy rules, synthetic security scenarios,
-tool-call firewalling, deterministic target-agent simulation, safe mock tools,
-audit logs, API endpoints, baseline comparison, and evaluation metrics.
+Core backend for AgentShield: model-backed agent workflows, policy rules,
+synthetic security scenarios, tool-call firewalling, safe mock tools, audit
+logs, API endpoints, baseline comparison, and evaluation metrics.
 
 AgentShield evaluates proposed tool calls before execution. It classifies each
 call as `ALLOW`, `BLOCK`, or `ASK_APPROVAL` using compiled policy rules, risk
@@ -17,7 +17,10 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 - Firewall, policy checker, risk classifier, and label validator.
 - Shared helper modules for intent matching, security patterns, text matching,
   and external-target classification.
-- Deterministic target-agent proposal flow for repeatable local testing.
+- Model-backed target, red-team, policy, risk, audit, and judge agents with
+  strict structured outputs and explicit offline modes.
+- Credential redaction, bounded retries and timeouts, stateless Gemini requests,
+  optional OpenAI retention, safe metadata, and labeled fallback behavior.
 - Safe mock tool registry covering email, files, calendar, tasks, issues, and HTTP.
 - End-to-end orchestrator with workflow state, audit entries, metrics, and exports.
 - FastAPI backend for frontend or demo integration.
@@ -36,11 +39,15 @@ touch real files, create calendar events, open issues, or make HTTP requests.
 | `src/security_patterns.py` | Shared security pattern constants. |
 | `src/security_text.py` | Shared text matching and external-target helpers. |
 | `src/tools.py` | Supported tool schemas and safe mock execution. |
-| `src/target_agent.py` | Deterministic target-agent tool-call proposals. |
+| `src/target_agent.py` | Model-backed and offline target-agent tool-call proposals. |
+| `src/llm_client.py` | Provider-neutral structured client with Gemini and OpenAI adapters. |
+| `src/llm_settings.py` | Typed `.env` and environment configuration. |
+| `src/llm_models.py` | Strict structured-output schemas for every online agent. |
+| `src/llm_safety.py` | Provider-input redaction and size enforcement. |
 | `src/metrics.py` | Security, usability, and accuracy metrics. |
 | `src/policy_compiler_agent.py` | Markdown policy compiler for structured rule exports. |
 | `src/label_validator.py` | Dataset label consistency checker. |
-| `agents/` | Deterministic red-team generation and audit-quality utilities. |
+| `agents/` | Online/offline red-team generation and audit-quality judging. |
 | `data/` | Synthetic scenarios, schema, policy rules, audit logs, and exports. |
 | `docs/` | Architecture, API contract, policies, rule format, metrics, and project report. |
 
@@ -52,7 +59,14 @@ Use Python 3.10+.
 python3 -m venv .venv
 source .venv/bin/activate
 python3 -m pip install -r requirements.txt
+cp .env.example .env
 ```
+
+For online mode, set the generic `AGENTSHIELD_LLM_API_KEY` field in `.env`,
+choose `gemini` or `openai` with `AGENTSHIELD_LLM_PROVIDER`, set a compatible
+model identifier, and change `AGENTSHIELD_LLM_MODE` to `online`. No credential
+belongs in frontend variables or committed files. See
+[`docs/model_integration.md`](docs/model_integration.md) for the complete setup.
 
 ## Run The API
 
@@ -74,6 +88,8 @@ Useful endpoints:
 | `POST` | `/metrics` | Compute metrics for selected datasets. |
 | `GET` | `/audit-log` | In-memory audit entries for the current API process. |
 | `POST` | `/baseline-comparison` | Compare unprotected, prompt guardrail, and AgentShield decisions. |
+| `POST` | `/agents/red-team/generate` | Generate one synthetic adversarial scenario. |
+| `POST` | `/agents/policy/compile` | Compile an inactive policy candidate for review. |
 
 See `docs/api_contract.md` for request and response shapes.
 
@@ -131,6 +147,13 @@ PYTHONPATH=. python3 src/label_validator.py --rules data/policy_rules.json --dat
 git diff --check
 ```
 
+The automated suite validates every online agent through a schema-faithful fake
+provider. After configuring a real key, run the separate live-provider check:
+
+```bash
+PYTHONPATH=. python3 scripts/llm_smoke.py
+```
+
 ## Documentation
 
 - `docs/architecture.md` - backend scope, module map, lifecycle, and safety boundary.
@@ -138,6 +161,7 @@ git diff --check
 - `docs/safety_policies.md` - human-readable safety policies.
 - `docs/policy_rule_format.md` - compiled rule format.
 - `docs/evaluation_metrics.md` - metrics definitions and formulas.
+- `docs/model_integration.md` - provider setup, agent roles, safeguards, and live validation.
 - `docs/report/README.md` - project report and supporting evidence index.
 - `data/README.md` - dataset schema, labels, validation, and safety notes.
 - `agents/README.md` - red-team generation and audit-quality utility guide.

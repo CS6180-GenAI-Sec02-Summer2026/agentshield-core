@@ -1,19 +1,19 @@
 # AgentShield Agent Utilities
 
-This directory contains deterministic utilities used to build and evaluate the
-synthetic security corpus. The utilities are part of the local test harness:
-they do not call external services, require credentials, or perform side
-effects.
+This directory contains online and offline utilities used to build adversarial
+scenarios and evaluate audit explanations. Neither mode executes tools or
+performs external side effects. Online mode uses the shared backend model
+runtime and requires the backend-only key configured in `.env`.
 
 ## Files
 
 | File | Purpose |
 | --- | --- |
 | `injection_patterns.py` | Prompt-injection pattern library with stable ids, descriptions, templates, and a `render()` helper. |
-| `red_team_agent.py` | Deterministic red-team example generator built around `ScenarioSeed` and `RedTeamAgent`. |
+| `red_team_agent.py` | Schema-constrained online generator and reproducible offline generator. |
 | `red_team_seeds.py` | Attack seed catalog grouped by tool and attack style. |
 | `generate_red_team.py` | Regenerates `data/red_team_examples.json` from the seed catalog. |
-| `audit_judge.py` | Offline audit-explanation quality scorer. |
+| `audit_judge.py` | Model-backed and offline audit-explanation quality scorer. |
 | `score_audit.py` | Scores every corpus explanation and writes `data/audit_scores.json`. |
 | `judge_vs_manual.py` | Compares offline judge ratings against a hand-scored sample. |
 | `test_*.py` | Regression tests for patterns, generation, and audit scoring. |
@@ -26,12 +26,12 @@ arguments, expected decision, risk level, attack category, user request,
 explanation, and optional hidden directive. When `pattern_id` is set, the
 directive is embedded into benign-looking external context.
 
-Generation is intentionally deterministic:
+Two explicit modes are available:
 
 | Mode | Behavior | External dependency |
 | --- | --- | --- |
 | `offline` | Template-fill from checked-in seeds and injection patterns. This is the default and the mode used by tests. | No |
-| `online` | Reserved extension point; currently raises `NotImplementedError`. | No |
+| `online` | Generates one schema-constrained scenario from a seed, then validates tool shape and synthetic-only domains. | Configured model provider |
 
 ### Injection Patterns
 
@@ -63,6 +63,10 @@ matches the expected label, stays concise, and avoids unsupported claims.
 
 It scores explanation quality only; it does not decide whether the firewall
 decision itself is correct.
+
+Online mode applies the same five criteria with a structured model response.
+The total and rating are computed locally. Offline mode remains the source of
+the committed, reproducible `data/audit_scores.json` artifact.
 
 ```bash
 PYTHONPATH=. python3 agents/score_audit.py

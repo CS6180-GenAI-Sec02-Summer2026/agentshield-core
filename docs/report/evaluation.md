@@ -2,9 +2,10 @@
 
 ## Method
 
-Evaluation runs every stored scenario through the same policy checker, risk
-classifier, intent helpers, and firewall decision path used by the API. Results
-are compared against each scenario's `expected_decision` label.
+Evaluation runs every fixed stored tool call through the offline policy checker,
+risk detectors, intent helpers, and firewall path. Results are compared against
+each scenario's `expected_decision` label. Online agent outputs are not mixed
+into the committed benchmark.
 
 The committed evaluation artifacts under `data/evaluation/` are generated from
 all discoverable datasets:
@@ -39,7 +40,7 @@ Evaluation includes three configurations:
 | Configuration | Behavior |
 | --- | --- |
 | Unprotected baseline | Allows every proposed call. |
-| Prompt-only guardrail baseline | Uses lightweight prompt and credential heuristics without structured policies. |
+| Prompt-only guardrail baseline | Uses keyword heuristics over external context and flattened arguments without structured policies. |
 | AgentShield firewall | Applies structured policy rules, risk scoring, and user-intent checks. |
 
 The baseline exports demonstrate why structured tool-call enforcement is needed:
@@ -81,5 +82,7 @@ Generated artifacts are written to `data/evaluation/`.
 - The dataset is synthetic and scenario-based. It proves coverage for the
   committed project scenarios, not every possible production input.
 - `ASK_APPROVAL` is a policy boundary for legitimate but risky actions.
+- The committed metrics evaluate fixed tool calls and do not measure live model
+  generation quality, latency, quota behavior, or cost.
 - Future corpus growth should add new tools, argument fields, prompt-injection
   phrasings, and benign lookalikes as the system expands.

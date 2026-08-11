@@ -2,11 +2,9 @@
 
 ## Purpose
 
-The red-team generator creates deterministic adversarial scenarios that
-stress-test AgentShield before runtime integration. The generated corpus is used
-as regression coverage for prompt injection, data exfiltration, unauthorized
-actions, sensitive file reads, protected writes, public issue leaks, and unsafe
-external requests.
+The Red-Team Agent creates adversarial scenarios that stress-test AgentShield.
+Online mode performs schema-constrained model generation from bounded seeds;
+offline mode produces the stable committed regression corpus.
 
 ## Components
 
@@ -17,10 +15,10 @@ external requests.
 | `agents/red_team_agent.py` | Renders a `ScenarioSeed` into a schema-valid example. |
 | `agents/generate_red_team.py` | Writes `data/red_team_examples.json`. |
 
-Pipeline:
+Online pipeline:
 
 ```text
-ScenarioSeed -> injection pattern rendering -> schema-valid scenario -> dataset validation
+ScenarioSeed -> model generation -> tool validation -> synthetic-data validation -> scenario
 ```
 
 ## Injection Patterns
@@ -37,12 +35,12 @@ The generator uses five prompt-injection styles:
 
 Using multiple styles prevents the corpus from depending on one obvious phrase.
 
-## Deterministic Generation
+## Generation Modes
 
-The default generation mode is offline and deterministic. It fills checked-in
-templates from checked-in seeds, requires no network access, and produces stable
-outputs suitable for tests and audits. An `online` mode remains reserved as an
-extension point and currently raises `NotImplementedError`.
+Online mode uses the shared backend model runtime, strict structured output,
+tool-registry validation, and reserved-domain checks. Offline mode fills
+checked-in templates from checked-in seeds, requires no network access, and
+produces byte-stable outputs suitable for tests and audits.
 
 Regenerate and validate:
 
@@ -79,8 +77,9 @@ PYTHONPATH=. python3 agents/test_red_team_agent.py
 PYTHONPATH=. python3 data/validate_dataset.py data/red_team_examples.json
 ```
 
-The tests check pattern integrity, deterministic generation, schema validity,
-tool coverage, label consistency, and synthetic-only content.
+The tests check pattern integrity, deterministic generation, online structured
+generation, schema validity, tool coverage, label consistency, and
+synthetic-only content.
 
 ## Impact
 

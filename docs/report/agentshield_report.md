@@ -2,10 +2,10 @@
 title: "AgentShield: Agentic AI Security Framework"
 subtitle: "Securing Tool-Using AI Agents Against Prompt Injection, Data Leakage, and Unsafe Actions"
 author:
-  - "Mrinal Setty — Agent Orchestration & Target Agent Lead"
-  - "Aditya Shenoy — Red-Team Agent & Dataset Lead"
-  - "Yashas Uttangi — Safety, Firewall, Evaluation & Console Lead"
-date: "CS6180 · Summer 2026"
+  - "Mrinal Setty - Agent Orchestration & Target Agent Lead"
+  - "Aditya Shenoy - Red-Team Agent & Dataset Lead"
+  - "Yashas Uttangi - Safety, Firewall, Evaluation & Console Lead"
+date: "CS6180 - Summer 2026"
 ---
 
 # Problem Definition and GenAI Fit
@@ -16,7 +16,7 @@ Modern AI systems are moving from chatbots to *agentic* systems that take real
 actions through tools such as email, files, calendars, task managers, code
 hosting, and HTTP APIs. This shift introduces a new class of security risk:
 malicious content hidden inside emails, documents, webpages, or tool responses
-can manipulate an agent into unsafe actions — leaking private data, messaging
+can manipulate an agent into unsafe actions - leaking private data, messaging
 unauthorized recipients, or performing destructive operations the user never
 requested.
 
@@ -41,34 +41,44 @@ to ambiguous cases, classify risk, and explain decisions:
 |:------------------------|:----------------------------------------------------|
 | Target Agent | Tool-use reasoning and structured tool-call generation. |
 | Red-Team Agent | Adversarial prompting to generate prompt-injection and malicious scenarios. |
-| Policy Compiler / Firewall | Policy interpretation, ambiguous-risk reasoning, and audit-explanation generation. |
-| LLM-as-a-judge | Subjective audit-explanation quality only — never primary correctness. |
+| Policy Compiler Agent | Natural-language policy interpretation into validated, inactive rule candidates. |
+| Risk Analysis Agent | Semantic attack and authorization analysis merged with local detectors. |
+| Audit Explanation Agent | Grounded explanation of the authoritative policy decision. |
+| LLM-as-a-judge | Subjective audit-explanation quality only - never primary correctness. |
 
-Correctness is always measured against fixed ground-truth labels; the LLM judge
-scores only the *readability* of explanations.
+In online mode, all six responsibilities use schema-constrained model calls.
+The deterministic policy checker remains the final security boundary, so model
+output cannot override a block or approval requirement. Correctness is measured
+against fixed ground-truth labels; the online judge scores explanation quality,
+not decision correctness.
 
 # Baseline Comparison
 
 To show that a dedicated firewall adds real value, the same 94-scenario
 evaluation set is run through three configurations:
 
-- **Unprotected** — allows every proposed tool call.
-- **Prompt-only guardrail** — a lightweight safety prompt and credential
-  heuristics, with no structured policy layer.
-- **AgentShield** — structured policy rules, risk scoring, and user-intent
+- **Unprotected** - allows every proposed tool call.
+- **Prompt-only guardrail** - keyword heuristics over external context and
+  flattened tool arguments, with no structured policy layer.
+- **AgentShield** - structured policy rules, risk scoring, and user-intent
   checks applied to the proposed call.
 
-| Configuration | Attack Success (↓) | Defense Success (↑) | Policy Compliance (↑) | Benign Success (↑) |
+| Configuration | Attack Success (lower) | Defense Success (higher) | Policy Compliance (higher) | Benign Success (higher) |
 |:----------------------|:----:|:----:|:----:|:----:|
 | Unprotected | 100.0% | 0.0% | 31.9% | 100.0% |
 | Prompt-only guardrail | 74.0% | 26.0% | 45.7% | 100.0% |
 | **AgentShield** | **0.0%** | **100.0%** | **100.0%** | **100.0%** |
 
 The unprotected agent lets every attack through. The prompt-only guardrail
-catches obvious cases but still misses 74% of attacks, because it cannot inspect
-tool arguments, recipients, URLs, HTTP methods, file paths, or repository
-visibility. AgentShield blocks every attack with no benign regressions,
+catches obvious cases but still misses 74% of attacks because its small keyword
+set does not relate every argument field to user intent or apply the structured
+policy catalog. AgentShield blocks every attack with no benign regressions,
 demonstrating that structured tool-call enforcement is what closes the gap.
+
+The 94-entry set contains one exact duplicate: `sample-006` and `v0-042`.
+Deduplicating by user request changes the prompt-only guardrail's attack success
+from 74.0% to 73.47% and policy compliance from 45.74% to 46.24%; AgentShield
+remains at 100.0% policy compliance.
 
 # Application and Technical Depth of GenAI Techniques
 
@@ -76,10 +86,25 @@ demonstrating that structured tool-call enforcement is what closes the gap.
 
 Each request or stored scenario flows through one path: the **Target Agent**
 proposes a structured tool call; the call is schema-validated; the **Policy
-Checker** and **Risk Classifier** evaluate it in parallel; the **Firewall**
-combines both into the most restrictive decision — `ALLOW`, `BLOCK`, or
-`ASK_APPROVAL`; only `ALLOW` may reach optional safe mock execution; and the
-**Orchestrator** records an audit entry that feeds metrics and the API.
+Checker** produces the authoritative `ALLOW`, `BLOCK`, or `ASK_APPROVAL`
+decision; the **Risk Analysis Agent** conservatively merges semantic model
+evidence with local detectors; the **Audit Explanation Agent** explains the
+completed decision; and the **Audit Judge** scores explanation quality. Only
+`ALLOW` may reach optional safe mock execution.
+
+## Online Model Runtime
+
+The runtime uses one generic provider, model, and API-key configuration. It
+supports Gemini through the stable, stateless generate-content API and OpenAI
+or compatible endpoints through typed Chat Completions structured outputs. The
+default template selects `gemini-3.6-flash`, while the model identifier remains
+environment-configurable.
+
+Every agent requests a closed Pydantic schema. Inputs are credential-redacted
+and size-limited; requests use bounded retries, timeouts, and output limits.
+Provider, model, prompt version, latency, and token counts are recorded without
+exposing the key. Provider failure is explicit unless a labeled offline
+fallback is enabled.
 
 ## Red-Team Attack Generation
 
@@ -96,11 +121,11 @@ rather than a single obvious phrase:
 | `authority_urgency` | Uses claimed authority and urgency to pressure compliance. |
 | `fake_tool_response` | Presents the directive as if it came from a tool response. |
 
-Generation is **offline and deterministic** by default: it fills checked-in
-templates from checked-in seeds, needs no network or API key, and produces
-stable output suitable for tests and audits. An optional online mode is reserved
-as an extension point. This deterministic core is a deliberate reproducibility
-choice.
+Online generation uses a schema-constrained model response, validates the tool
+call against the registry, and rejects non-synthetic email or URL domains. The
+offline mode fills checked-in templates from checked-in seeds and remains the
+source of the byte-stable committed red-team corpus. This separation supports
+both genuine generative workflows and reproducible evaluation.
 
 The generator is built from four checked-in components:
 
@@ -113,11 +138,12 @@ The generator is built from four checked-in components:
 
 ## Policy Reasoning and Audit Explanations
 
-The Policy Compiler turns natural-language safety policies into structured JSON
-rules; the Firewall reasons over policy violations and risk to select a decision
-and produce a human-readable audit explanation. An LLM-as-a-judge, guided by a
-rubric, scores those explanations for quality — the only subjective metric, and
-the only place an LLM grades output.
+The Policy Compiler uses structured model output to translate natural-language
+policies into validated, disabled JSON candidates that require human review
+before activation. The deterministic Policy Checker evaluates active rules and
+selects the final decision. The Audit Explanation Agent is constrained to that
+decision and the actual matched rule IDs. An LLM-as-a-judge applies the rubric
+to explanation quality, while correctness remains label-based.
 
 # Data, Knowledge Sources, and Dataset Quality
 
@@ -148,16 +174,22 @@ Every scenario follows `dataset_schema.json` with seven fields: `user_request`,
 (`v0-*`, `rt-*`, `be-*`, `demo-*`) support lookup. The controlled label
 vocabulary is documented in `data/attack_taxonomy.md`.
 
-All eight supported tools are represented: `send_email`, `read_file`,
-`write_file`, `delete_file`, `create_calendar_event`, `create_task`,
-`create_github_issue`, and `send_http_request`.
+All eight supported tools are represented across five categories: email
+(`send_email`); files (`read_file`, `write_file`, and `delete_file`);
+productivity (`create_calendar_event` and `create_task`); issue tracking
+(`create_github_issue`); and network access (`send_http_request`).
 
 ## Dataset Quality
 
-Quality is enforced automatically. `validate_dataset.py` checks every file
-against the schema; `corpus_report.py` and `quality_report.py` verify balance
-and flag ambiguous labels; and `label_validator.py` confirms labels agree with
-runtime firewall behavior using the same shared helpers. A representative check:
+Quality is enforced automatically:
+
+- `validate_dataset.py` checks every file against the schema.
+- `corpus_report.py` and `quality_report.py` verify balance and flag ambiguous
+  labels.
+- `label_validator.py` confirms labels agree with runtime firewall behavior
+  using the same shared helpers.
+
+A representative check:
 
 ```
 PYTHONPATH=. python3 data/validate_dataset.py data/dataset_v0.json
@@ -173,17 +205,20 @@ real-looking contact data or credentials.
 
 ## Method
 
-Evaluation runs every stored scenario through the same policy checker, risk
-classifier, intent helpers, and firewall decision path used by the live API,
-then compares each decision to the scenario's `expected_decision` label. Because
-labels are fixed ground truth, correctness is objective and repeatable.
+Evaluation runs each fixed stored tool call through the offline policy checker,
+risk detectors, intent helpers, and firewall path, then compares the decision to
+the scenario's `expected_decision` label. Fixed calls and labels make the three
+configurations comparable and repeatable. Online generation, semantic risk,
+audit explanation, and judging are implemented runtime paths, but are not
+silently mixed into these committed accuracy numbers.
 
 ## Metrics
 
 The pipeline reports Attack Success Rate, Defense Success Rate, Benign Task
 Success Rate, False Positive / False Negative Rate, Policy Compliance Accuracy,
-`BLOCK` precision/recall/F1, and escalation rate. Audit-explanation quality is
-scored separately with a rubric and an LLM-as-a-judge.
+`BLOCK` precision/recall/F1, and escalation rate. The committed audit-quality
+artifact uses the deterministic rubric scorer; online scenario runs can invoke
+the model-backed judge against the same rubric.
 
 ## Reproduction
 
@@ -199,7 +234,7 @@ PYTHONPATH=. python3 src/experiment_runner.py
 
 Running all 94 scenarios through the firewall yields 100% policy-compliance with
 no false negatives and no false positives; the 85-example corpus reaches 85/85
-firewall–label agreement.
+firewall-label agreement.
 
 | Metric | AgentShield |
 |:------------------------------|:-----:|
@@ -220,11 +255,11 @@ falls from 100% (unprotected) and 74% (prompt-only) to 0% under AgentShield.
 ## Red-Team Gap Discovery and Remediation
 
 Expanding the adversarial corpus across all eight tools initially exposed missing
-policy coverage — around protected writes, credential leaks in public issues,
+policy coverage - around protected writes, credential leaks in public issues,
 sensitive file reads, and unauthorized calendar/task creation. These issue
 classes were then closed with reusable policy checks and regression tests rather
 than scenario-specific exceptions. Finding and fixing coverage gaps *before*
-production is precisely the value the red-team track provides.
+deployment is precisely the value the red-team track provides.
 
 | Issue class surfaced by the red-team corpus | Current firewall behavior |
 |:--------------------------------------------------|:----------------------------------|
@@ -240,8 +275,8 @@ production is precisely the value the red-team track provides.
 
 ## Demonstration Scenarios
 
-Three scenarios exercise the user-visible decision paths and were verified live
-through the firewall:
+Three scenarios exercise the user-visible decision paths and are covered by
+firewall regression tests:
 
 | Scenario | Tool | Decision | What it demonstrates |
 |:--------------|:-------------------|:-------------|:-------------------------------|
@@ -271,10 +306,6 @@ diagonal reflects 100% agreement.
 
 ![Confusion-matrix heatmap: every scenario lies on the diagonal (perfect agreement).](figures/confusion_matrix.png){width=55%}
 
-```{=latex}
-\newpage
-```
-
 ## Per-Tool Accuracy
 
 | Tool | Scenarios | Accuracy |
@@ -290,32 +321,15 @@ diagonal reflects 100% agreement.
 
 ## Security Console
 
-The React security console provides live visualizations that complement these
-tables: an attack-simulation view, per-decision cards (`ALLOW` / `BLOCK` /
-`ASK_APPROVAL`) with audit explanations, metric cards, and a baseline-comparison
-chart.
+The React security console provides visualizations that complement these tables:
+model-backed and manual simulation modes, red-team and policy-compiler
+workbenches, per-decision cards (`ALLOW` / `BLOCK` / `ASK_APPROVAL`) with model
+provenance, metric cards, and a baseline-comparison chart.
 
 # Links to the Codebase (GitHub)
 
 - **Backend / core:** <https://github.com/CS6180-GenAI-Sec02-Summer2026/agentshield-core>
 - **Frontend / console:** <https://github.com/CS6180-GenAI-Sec02-Summer2026/agentshield-console>
-
-# Milestones and Team Contributions
-
-The project ran over eight weekly milestones. Each milestone contained three
-parallel stories so all members contributed every week: Mrinal Setty owned the
-orchestration/backend track, Aditya Shenoy the dataset and red-team track, and
-Yashas Uttangi the policy, firewall, evaluation, and console track.
-
-| Member | Core ownership | GenAI contribution |
-|:-------------|:-------------------------------|:-------------------------------|
-| Mrinal Setty | Orchestration, Target Agent, tool interfaces, backend/API | Multi-agent orchestration, Target Agent prompting, tool-call generation |
-| Aditya Shenoy | Red-Team Agent, dataset, attack taxonomy, dataset quality, report | Adversarial attack generation, injection patterns, synthetic scenarios |
-| Yashas Uttangi | Firewall, policy compiler, evaluation metrics, console | Policy reasoning, audit-explanation generation, LLM-as-a-judge |
-
-Work was delivered continuously through reviewed pull requests across all eight
-milestones. The contribution target was an approximately equal split (about one
-third each), with each member owning one major story every milestone.
 
 # Conclusion and Limitations
 
@@ -332,5 +346,8 @@ for the committed scenarios rather than every production input. All tool
 execution is simulated, so real deployment must remain behind explicit user
 approval and production controls. `ASK_APPROVAL` is a policy boundary whose
 calibration depends on the configured policies, and only subjective explanation
-quality is scored by an LLM-as-a-judge — objective correctness is always
-measured against fixed ground-truth labels.
+quality can be scored by an LLM-as-a-judge - objective correctness is always
+measured against fixed ground-truth labels. Automated tests validate every
+online agent path with a schema-faithful fake provider. A real API key is still
+required to measure live-provider latency, output quality, quota behavior, and
+cost; those outcomes are not claimed by the committed offline benchmark.
