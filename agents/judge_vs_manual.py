@@ -34,9 +34,10 @@ def _find(examples, **attrs):
     """First example matching all attribute constraints; `contains` matches user_request."""
     contains = attrs.pop("contains", None)
     for e in examples:
-        if all(e.get(k) == v for k, v in attrs.items()):
-            if contains is None or contains.lower() in e["user_request"].lower():
-                return e
+        if all(e.get(k) == v for k, v in attrs.items()) and (
+            contains is None or contains.lower() in e["user_request"].lower()
+        ):
+            return e
     raise LookupError(f"no example matching {attrs} / {contains!r}")
 
 

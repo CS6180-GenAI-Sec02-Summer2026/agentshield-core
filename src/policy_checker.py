@@ -21,7 +21,7 @@ Usage:
 """
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
 
 from src.intent_utils import request_is_read_only, tool_is_authorized_by_request
@@ -46,13 +46,13 @@ from src.security_text import (
     matched_patterns,
 )
 
-
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 
 @dataclass
 class PolicyViolation:
     """A single policy violation found during checking."""
+
     rule_id: str
     rule_name: str
     decision: str
@@ -68,6 +68,7 @@ class PolicyViolation:
 @dataclass
 class CheckResult:
     """Complete result of a policy check on a tool call."""
+
     tool_name: str
     total_rules_evaluated: int
     violations_found: int
@@ -98,7 +99,7 @@ class PolicyChecker:
         path = _resolve_rules_path(filepath)
         if not path.exists():
             raise FileNotFoundError(f"Rules file not found: {filepath} (resolved to {path})")
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             data = json.load(f)
         rules = data.get("rules", [])
         rules.sort(key=lambda r: r.get("priority", 99))
@@ -138,17 +139,22 @@ class PolicyChecker:
         user_request = example.get("user_request", "")
 
         if check_type == "equals":
-            value = (
-                self._get_nested_value(example, field_path)
-                or self._get_nested_value(proposed, field_path)
+            value = self._get_nested_value(example, field_path) or self._get_nested_value(
+                proposed, field_path
             )
             matched = value == check.get("value")
-            return matched, f"Field '{field_path}' {'matches' if matched else 'does not match'} '{check.get('value')}'"
+            return (
+                matched,
+                f"Field '{field_path}' {'matches' if matched else 'does not match'} '{check.get('value')}'",
+            )
 
         elif check_type == "contains_file_content":
             matched_indicators = matched_patterns(arguments, FILE_CONTENT_INDICATORS)
             matched = bool(matched_indicators)
-            return matched, f"File content indicators {'found' if matched else 'not found'}: {matched_indicators}"
+            return (
+                matched,
+                f"File content indicators {'found' if matched else 'not found'}: {matched_indicators}",
+            )
 
         elif check_type == "is_external_recipient":
             recipient = self._get_nested_value(proposed, field_path)
@@ -158,18 +164,29 @@ class PolicyChecker:
                 recipient = [recipient]
             external = external_recipients(recipient, example.get("internal_domains"))
             matched = bool(external)
-            return matched, f"External recipients: {external}" if matched else "All recipients are internal"
+            return (
+                matched,
+                f"External recipients: {external}" if matched else "All recipients are internal",
+            )
 
         elif check_type == "contains_secret_pattern":
             patterns = check.get("patterns", SECRET_PATTERNS)
             found = matched_patterns(arguments, patterns)
             matched = bool(found)
-            return matched, f"Secret patterns found: {found}" if matched else "No secret patterns detected"
+            return (
+                matched,
+                f"Secret patterns found: {found}" if matched else "No secret patterns detected",
+            )
 
         elif check_type == "contains_credential_value":
             found = matched_credential_values(arguments)
             matched = bool(found)
-            return matched, f"Credential values found for: {found}" if matched else "No credential values detected"
+            return (
+                matched,
+                f"Credential values found for: {found}"
+                if matched
+                else "No credential values detected",
+            )
 
         elif check_type == "is_external_target":
             target = self._get_nested_value(proposed, field_path)
@@ -182,21 +199,34 @@ class PolicyChecker:
             tool_name = proposed.get("tool_name", "")
             user_intended = tool_is_authorized_by_request(tool_name, user_request)
             contradicts = not user_intended
-            return contradicts, f"Tool '{tool_name}' {'contradicts' if contradicts else 'matches'} user intent"
+            return (
+                contradicts,
+                f"Tool '{tool_name}' {'contradicts' if contradicts else 'matches'} user intent",
+            )
 
         elif check_type == "contains_instruction_pattern":
-            context_str = external_context if isinstance(external_context, str) else str(external_context)
+            context_str = (
+                external_context if isinstance(external_context, str) else str(external_context)
+            )
             patterns = tuple(check.get("patterns", ())) + tuple(INJECTION_PATTERNS)
             found = matched_patterns(context_str, patterns)
             matched = bool(found)
-            return matched, f"Injection patterns found: {found}" if matched else "No injection patterns detected"
+            return (
+                matched,
+                f"Injection patterns found: {found}"
+                if matched
+                else "No injection patterns detected",
+            )
 
         elif check_type == "not_in_user_request":
             value = self._get_nested_value(proposed, field_path)
             if not value or not isinstance(value, str):
                 return False, "No value found"
             not_in_request = value.lower() not in user_request.lower()
-            return not_in_request, f"Value '{value}' {'not in' if not_in_request else 'found in'} user request"
+            return (
+                not_in_request,
+                f"Value '{value}' {'not in' if not_in_request else 'found in'} user request",
+            )
 
         elif check_type == "is_external_url":
             url = self._get_nested_value(proposed, field_path)
@@ -212,7 +242,10 @@ class PolicyChecker:
 
         elif check_type == "user_request_is_read_only":
             matched = request_is_read_only(user_request)
-            return matched, "User request is read-only" if matched else "User request is not read-only"
+            return (
+                matched,
+                "User request is read-only" if matched else "User request is not read-only",
+            )
 
         elif check_type == "contains_sensitive_content":
             value = self._get_nested_value(proposed, field_path)
@@ -220,7 +253,10 @@ class PolicyChecker:
                 return False, "No content to check"
             found = matched_patterns(value, SENSITIVE_CONTENT_PATTERNS)
             matched = bool(found)
-            return matched, f"Sensitive content found: {found}" if matched else "No sensitive content"
+            return (
+                matched,
+                f"Sensitive content found: {found}" if matched else "No sensitive content",
+            )
 
         elif check_type == "has_external_participant_or_public":
             participants = self._get_nested_value(proposed, "arguments.participants")
@@ -245,11 +281,17 @@ class PolicyChecker:
                 return False, "No content to check"
             found = matched_patterns(value, INTERNAL_REFERENCE_PATTERNS)
             matched = bool(found)
-            return matched, f"Internal references found: {found}" if matched else "No internal references"
+            return (
+                matched,
+                f"Internal references found: {found}" if matched else "No internal references",
+            )
 
         elif check_type == "is_public_repository":
             matched = is_public_repository(arguments)
-            return matched, "Repository is public" if matched else "Repository is private or unspecified"
+            return (
+                matched,
+                "Repository is public" if matched else "Repository is private or unspecified",
+            )
 
         elif check_type == "contains_sensitive_sharing_content":
             found = matched_patterns(arguments, SENSITIVE_SHARING_PATTERNS)
@@ -263,36 +305,56 @@ class PolicyChecker:
             value = self._get_nested_value(proposed, field_path)
             found = matched_patterns(value, SENSITIVE_FILE_PATH_PATTERNS)
             matched = bool(found)
-            return matched, f"Sensitive file path patterns found: {found}" if matched else "No sensitive file path patterns"
+            return (
+                matched,
+                f"Sensitive file path patterns found: {found}"
+                if matched
+                else "No sensitive file path patterns",
+            )
 
         elif check_type == "contains_protected_file_change":
             found = matched_patterns(arguments, PROTECTED_FILE_CHANGE_PATTERNS)
             matched = bool(found)
-            return matched, f"Protected file change patterns found: {found}" if matched else "No protected file change patterns"
+            return (
+                matched,
+                f"Protected file change patterns found: {found}"
+                if matched
+                else "No protected file change patterns",
+            )
 
         elif check_type == "is_broadcast_recipient":
             recipients = flatten_to_string(self._get_nested_value(proposed, field_path)).lower()
             matched = any(pattern in recipients for pattern in BROADCAST_RECIPIENT_PATTERNS)
-            return matched, f"Broadcast recipient detected: {recipients}" if matched else "No broadcast recipient detected"
+            return (
+                matched,
+                f"Broadcast recipient detected: {recipients}"
+                if matched
+                else "No broadcast recipient detected",
+            )
 
         elif check_type == "count_greater_than":
             targets = self._get_nested_value(proposed, field_path)
             threshold = check.get("value", 1)
             if isinstance(targets, list):
                 matched = len(targets) > threshold
-                return matched, f"Target count {len(targets)} {'>' if matched else '<='} threshold {threshold}"
+                return (
+                    matched,
+                    f"Target count {len(targets)} {'>' if matched else '<='} threshold {threshold}",
+                )
             return False, "No list found for count check"
 
         elif check_type == "greater_than":
-            value = (
-                self._get_nested_value(example, field_path)
-                or self._get_nested_value(proposed, field_path)
+            value = self._get_nested_value(example, field_path) or self._get_nested_value(
+                proposed, field_path
             )
             threshold = check.get("value", 1)
             if value is not None:
                 try:
                     matched = float(value) > threshold
-                    return matched, f"Value {value} {'>' if matched else '<='} threshold {threshold}"
+                    return (
+                        matched,
+                        f"Value {value} {'>' if matched else '<='} threshold {threshold}",
+                    )
                 except (ValueError, TypeError):
                     return False, f"Cannot compare value '{value}' as number"
             return False, "Value not found"
@@ -411,8 +473,13 @@ class PolicyChecker:
             decisions[rule.get("decision", "ALLOW")] += 1
 
         all_tools = {
-            "send_email", "read_file", "write_file", "delete_file",
-            "create_calendar_event", "create_task", "create_github_issue",
+            "send_email",
+            "read_file",
+            "write_file",
+            "delete_file",
+            "create_calendar_event",
+            "create_task",
+            "create_github_issue",
             "send_http_request",
         }
 

@@ -19,15 +19,13 @@ Usage:
 
 import csv
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from pathlib import Path
-from typing import Optional
 
-from src.metrics import MetricsEngine, EvaluationResult, MetricsReport
 from src.firewall_agent import FirewallAgent
+from src.metrics import EvaluationResult, MetricsEngine, MetricsReport
 from src.security_patterns import INTERNAL_TARGET_INDICATORS
 from src.security_text import flatten_to_string
-
 
 # ============================================================
 # Baseline simulations
@@ -46,8 +44,13 @@ BASIC_SAFETY_KEYWORDS = [
 ]
 
 BASIC_DANGER_KEYWORDS = [
-    "password", "api_key", "secret", "credential", "token",
-    "private_key", "authorization",
+    "password",
+    "api_key",
+    "secret",
+    "credential",
+    "token",
+    "private_key",
+    "authorization",
 ]
 
 
@@ -58,16 +61,18 @@ def simulate_unprotected_agent(examples: list[dict]) -> list[EvaluationResult]:
     """
     results = []
     for ex in examples:
-        results.append(EvaluationResult(
-            example_id=ex.get("id", "unknown"),
-            expected_decision=ex.get("expected_decision", "ALLOW"),
-            actual_decision="ALLOW",  # Always allows
-            tool_name=ex.get("proposed_tool_call", {}).get("tool_name", "unknown"),
-            attack_category=ex.get("attack_category", "none"),
-            risk_level=ex.get("risk_level", "low"),
-            tool_call_intact=True,
-            audit_score=None,
-        ))
+        results.append(
+            EvaluationResult(
+                example_id=ex.get("id", "unknown"),
+                expected_decision=ex.get("expected_decision", "ALLOW"),
+                actual_decision="ALLOW",  # Always allows
+                tool_name=ex.get("proposed_tool_call", {}).get("tool_name", "unknown"),
+                attack_category=ex.get("attack_category", "none"),
+                risk_level=ex.get("risk_level", "low"),
+                tool_call_intact=True,
+                audit_score=None,
+            )
+        )
     return results
 
 
@@ -98,10 +103,7 @@ def simulate_prompt_guardrail(examples: list[dict]) -> list[EvaluationResult]:
             to = arguments.get("to", "")
             url = arguments.get("url", "")
             target = str(to) + str(url)
-            if target and not any(
-                ind in target.lower()
-                for ind in INTERNAL_TARGET_INDICATORS
-            ):
+            if target and not any(ind in target.lower() for ind in INTERNAL_TARGET_INDICATORS):
                 decision = "BLOCK"
 
         # Does NOT catch:
@@ -112,16 +114,18 @@ def simulate_prompt_guardrail(examples: list[dict]) -> list[EvaluationResult]:
         # - Bulk operations
         # - Anything requiring structured policy evaluation
 
-        results.append(EvaluationResult(
-            example_id=ex.get("id", "unknown"),
-            expected_decision=expected,
-            actual_decision=decision,
-            tool_name=proposed.get("tool_name", "unknown"),
-            attack_category=ex.get("attack_category", "none"),
-            risk_level=ex.get("risk_level", "low"),
-            tool_call_intact=True,
-            audit_score=1.0 if decision != "ALLOW" else None,  # Basic explanations
-        ))
+        results.append(
+            EvaluationResult(
+                example_id=ex.get("id", "unknown"),
+                expected_decision=expected,
+                actual_decision=decision,
+                tool_name=proposed.get("tool_name", "unknown"),
+                attack_category=ex.get("attack_category", "none"),
+                risk_level=ex.get("risk_level", "low"),
+                tool_call_intact=True,
+                audit_score=1.0 if decision != "ALLOW" else None,  # Basic explanations
+            )
+        )
 
     return results
 
@@ -146,16 +150,18 @@ def simulate_agentshield(
         else:
             audit_score = 1.0
 
-        results.append(EvaluationResult(
-            example_id=ex.get("id", "unknown"),
-            expected_decision=expected,
-            actual_decision=decision.decision,
-            tool_name=ex.get("proposed_tool_call", {}).get("tool_name", "unknown"),
-            attack_category=ex.get("attack_category", "none"),
-            risk_level=ex.get("risk_level", "low"),
-            tool_call_intact=True,
-            audit_score=audit_score,
-        ))
+        results.append(
+            EvaluationResult(
+                example_id=ex.get("id", "unknown"),
+                expected_decision=expected,
+                actual_decision=decision.decision,
+                tool_name=ex.get("proposed_tool_call", {}).get("tool_name", "unknown"),
+                attack_category=ex.get("attack_category", "none"),
+                risk_level=ex.get("risk_level", "low"),
+                tool_call_intact=True,
+                audit_score=audit_score,
+            )
+        )
 
     return results
 
@@ -164,9 +170,11 @@ def simulate_agentshield(
 # Comparison
 # ============================================================
 
+
 @dataclass
 class BaselineComparison:
     """Comparison results across all three configurations."""
+
     unprotected: dict
     prompt_guardrail: dict
     agentshield: dict
@@ -185,7 +193,7 @@ class BaselineAnalyzer:
 
     def __init__(self, rules_path: str = "data/policy_rules.json"):
         self.rules_path = rules_path
-        self.comparison: Optional[BaselineComparison] = None
+        self.comparison: BaselineComparison | None = None
 
     def run_comparison(self, dataset: list[dict]) -> BaselineComparison:
         """
@@ -211,9 +219,7 @@ class BaselineAnalyzer:
         report_agentshield = engine_agentshield.compute_all()
 
         # Build summary comparison
-        summary = self._build_summary(
-            report_unprotected, report_guardrail, report_agentshield
-        )
+        summary = self._build_summary(report_unprotected, report_guardrail, report_agentshield)
 
         self.comparison = BaselineComparison(
             unprotected=report_unprotected.to_dict(),
@@ -287,7 +293,7 @@ class BaselineAnalyzer:
         }
 
     @staticmethod
-    def _best_metric(values: dict, lower_is_better: bool = False) -> Optional[str]:
+    def _best_metric(values: dict, lower_is_better: bool = False) -> str | None:
         """Return the config with the best non-null metric value."""
         available = {name: value for name, value in values.items() if value is not None}
         if not available:
@@ -348,12 +354,14 @@ class BaselineAnalyzer:
             writer = csv.writer(f, lineterminator="\n")
             writer.writerow(["metric", "unprotected", "prompt_guardrail", "agentshield"])
             for row in self.comparison.summary["comparison_table"]:
-                writer.writerow([
-                    row["metric"],
-                    row["unprotected"],
-                    row["prompt_guardrail"],
-                    row["agentshield"],
-                ])
+                writer.writerow(
+                    [
+                        row["metric"],
+                        row["unprotected"],
+                        row["prompt_guardrail"],
+                        row["agentshield"],
+                    ]
+                )
         print(f"Comparison CSV exported to {filepath}")
 
     def export_all(self, output_dir: str = "data/evaluation"):
@@ -370,9 +378,13 @@ class BaselineAnalyzer:
 
         self._engine_agentshield.export_report(f"{output_dir}/agentshield_metrics.json")
         self._engine_agentshield.export_summary_csv(f"{output_dir}/agentshield_summary.csv")
-        self._engine_agentshield.export_confusion_matrix_csv(f"{output_dir}/agentshield_confusion_matrix.csv")
+        self._engine_agentshield.export_confusion_matrix_csv(
+            f"{output_dir}/agentshield_confusion_matrix.csv"
+        )
         self._engine_agentshield.export_per_tool_csv(f"{output_dir}/agentshield_per_tool.csv")
-        self._engine_agentshield.export_per_category_csv(f"{output_dir}/agentshield_per_category.csv")
+        self._engine_agentshield.export_per_category_csv(
+            f"{output_dir}/agentshield_per_category.csv"
+        )
 
         self._engine_unprotected.export_report(f"{output_dir}/unprotected_metrics.json")
         self._engine_guardrail.export_report(f"{output_dir}/guardrail_metrics.json")

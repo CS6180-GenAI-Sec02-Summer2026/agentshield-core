@@ -1,10 +1,10 @@
 """Scenario loading helpers for AgentShield dataset and API flows."""
 
 import json
-import os
 from pathlib import Path
 from typing import Any
 
+from src.app_settings import AppSettings
 
 REPO_ROOT = Path(__file__).resolve().parent.parent
 DEFAULT_DATA_DIR = REPO_ROOT / "data"
@@ -27,11 +27,13 @@ def available_datasets(data_dir: Path | str | None = None) -> list[dict[str, Any
         if not path.exists():
             continue
         rows = _load_json_list(path)
-        found.append({
-            "name": name,
-            "file": str(path),
-            "count": len(rows),
-        })
+        found.append(
+            {
+                "name": name,
+                "file": path.name,
+                "count": len(rows),
+            }
+        )
     return found
 
 
@@ -86,7 +88,7 @@ def _with_metadata(row: dict[str, Any], dataset_name: str, index: int) -> dict[s
 
 
 def _resolve_data_dir(data_dir: Path | str | None) -> Path:
-    configured = data_dir or os.getenv("AGENTSHIELD_DATA_DIR") or DEFAULT_DATA_DIR
+    configured = data_dir or AppSettings().data_dir or DEFAULT_DATA_DIR
     path = Path(configured)
     if path.is_absolute():
         return path

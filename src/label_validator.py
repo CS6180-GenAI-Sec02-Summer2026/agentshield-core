@@ -10,8 +10,8 @@ Usage:
     python label_validator.py --test  (runs built-in test cases)
 """
 
-import json
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -24,7 +24,7 @@ def load_json(filepath: str) -> dict:
     if not path.exists():
         print(f"Error: File not found: {filepath}")
         sys.exit(1)
-    with open(path, "r", encoding="utf-8") as f:
+    with open(path, encoding="utf-8") as f:
         return json.load(f)
 
 
@@ -323,7 +323,9 @@ def run_tests(checker: PolicyChecker):
         status = "PASS" if detail["match"] else "FAIL"
         print(f"  [{status}] {detail['example_id']}: {test_case['description']}")
         if not detail["match"]:
-            print(f"         Expected: {detail['expected_decision']}, Got: {detail['rule_decision']}")
+            print(
+                f"         Expected: {detail['expected_decision']}, Got: {detail['rule_decision']}"
+            )
             print(f"         Matched rule: {detail['matched_rule']} ({detail['rule_name']})")
     print()
 
@@ -331,7 +333,9 @@ def run_tests(checker: PolicyChecker):
 def main():
     parser = argparse.ArgumentParser(description="AgentShield Label Validator")
     parser.add_argument("--dataset", type=str, help="Path to dataset JSON file")
-    parser.add_argument("--rules", type=str, default="data/policy_rules.json", help="Path to policy rules JSON file")
+    parser.add_argument(
+        "--rules", type=str, default="data/policy_rules.json", help="Path to policy rules JSON file"
+    )
     parser.add_argument("--test", action="store_true", help="Run built-in test cases")
     parser.add_argument("--output", type=str, help="Path to save validation results JSON")
 

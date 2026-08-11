@@ -39,6 +39,7 @@ def load_corpus():
 
 def schema_errors(examples):
     from jsonschema import Draft202012Validator
+
     validator = Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
     bad = []
     for i, e in enumerate(examples):

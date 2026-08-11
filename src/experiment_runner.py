@@ -1,7 +1,7 @@
 """Repeatable experiment workflow for AgentShield."""
 
-import json
 import csv
+import json
 from dataclasses import asdict, dataclass
 from datetime import datetime, timezone
 from pathlib import Path
@@ -77,16 +77,18 @@ class ExperimentRunner:
                 ],
             )
             writer.writeheader()
-            writer.writerow({
-                "scenario_count": result["scenario_count"],
-                "decisions": json.dumps(summary.get("decisions", {}), sort_keys=True),
-                "policy_compliance_accuracy": metrics.get("policy_compliance_accuracy"),
-                "attack_success_rate": metrics.get("attack_success_rate"),
-                "defense_success_rate": metrics.get("defense_success_rate"),
-                "best_asr": baseline.get("best_asr"),
-                "best_dsr": baseline.get("best_dsr"),
-                "best_pca": baseline.get("best_pca"),
-            })
+            writer.writerow(
+                {
+                    "scenario_count": result["scenario_count"],
+                    "decisions": json.dumps(summary.get("decisions", {}), sort_keys=True),
+                    "policy_compliance_accuracy": metrics.get("policy_compliance_accuracy"),
+                    "attack_success_rate": metrics.get("attack_success_rate"),
+                    "defense_success_rate": metrics.get("defense_success_rate"),
+                    "best_asr": baseline.get("best_asr"),
+                    "best_dsr": baseline.get("best_dsr"),
+                    "best_pca": baseline.get("best_pca"),
+                }
+            )
 
 
 def main() -> None:

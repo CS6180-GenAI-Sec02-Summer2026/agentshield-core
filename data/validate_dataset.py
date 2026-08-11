@@ -14,10 +14,7 @@ from pathlib import Path
 try:
     from jsonschema import Draft202012Validator
 except ImportError:
-    sys.exit(
-        "Missing dependency 'jsonschema'. Install it with:\n"
-        "    pip install jsonschema"
-    )
+    sys.exit("Missing dependency 'jsonschema'. Install it with:\n    pip install jsonschema")
 
 HERE = Path(__file__).resolve().parent
 SCHEMA_PATH = HERE / "dataset_schema.json"
@@ -36,7 +33,9 @@ def main():
     examples = load_json(examples_path)
 
     if not isinstance(examples, list):
-        sys.exit(f"Expected a JSON array of examples in {examples_path}, got {type(examples).__name__}.")
+        sys.exit(
+            f"Expected a JSON array of examples in {examples_path}, got {type(examples).__name__}."
+        )
 
     validator = Draft202012Validator(schema)
 

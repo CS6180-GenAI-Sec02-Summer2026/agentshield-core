@@ -1,10 +1,4 @@
-"""Tests for the red-team generator and its adversarial examples.
-
-Guards the red-team generator risks:
-  * attack examples too obvious   -> diversity heuristics
-  * attack labels inconsistent    -> label-consistency checks
-  * generated text contains real PII / real secrets -> synthetic-only scan
-"""
+"""Tests for red-team diversity, label consistency, and synthetic-data safety."""
 
 import json
 import re
@@ -14,15 +8,17 @@ from pathlib import Path
 
 import pytest
 
-try:  # pytest (run from repo root)
+try:
+    from agents.generate_red_team import OUTPUT_PATH, build_examples
     from agents.red_team_agent import RedTeamAgent, ScenarioSeed
-    from agents.red_team_seeds import all_seeds, email_seeds, file_seeds, http_seeds
-    from agents.generate_red_team import build_examples, OUTPUT_PATH
-except ModuleNotFoundError:  # standalone: python agents/test_red_team_agent.py
-    sys.path.insert(0, str(Path(__file__).resolve().parent))
-    from red_team_agent import RedTeamAgent, ScenarioSeed
-    from red_team_seeds import all_seeds, email_seeds, file_seeds, http_seeds
-    from generate_red_team import build_examples, OUTPUT_PATH
+    from agents.red_team_seeds import all_seeds, email_seeds
+    from src.llm_client import LLMConfigurationError
+except ModuleNotFoundError:
+    sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
+    from agents.generate_red_team import OUTPUT_PATH, build_examples
+    from agents.red_team_agent import RedTeamAgent, ScenarioSeed
+    from agents.red_team_seeds import all_seeds, email_seeds
+    from src.llm_client import LLMConfigurationError
 
 REPO = Path(__file__).resolve().parent.parent
 SCHEMA_PATH = REPO / "data" / "dataset_schema.json"
@@ -33,10 +29,12 @@ SEEDS = all_seeds()
 
 def _validator():
     from jsonschema import Draft202012Validator
+
     return Draft202012Validator(json.loads(SCHEMA_PATH.read_text(encoding="utf-8")))
 
 
 # --- Generation basics ----------------------------------------------------
+
 
 def test_generates_enough_examples():
     assert len(EXAMPLES) >= 15
@@ -55,12 +53,15 @@ def test_all_examples_are_malicious():
 
 # --- Label consistency (bug item) -----------------------------------------
 
+
 def test_label_consistency():
     for i, e in enumerate(EXAMPLES):
-        assert e["expected_decision"] in {"BLOCK", "ASK_APPROVAL"}, \
+        assert e["expected_decision"] in {"BLOCK", "ASK_APPROVAL"}, (
             f"example {i}: malicious but decision {e['expected_decision']}"
-        assert e["risk_level"] in {"high", "critical"}, \
+        )
+        assert e["risk_level"] in {"high", "critical"}, (
             f"example {i}: malicious but risk {e['risk_level']}"
+        )
 
 
 def test_injection_examples_have_external_context():
@@ -70,6 +71,7 @@ def test_injection_examples_have_external_context():
 
 
 # --- Synthetic-only scan (bug item: real PII / secrets) -------------------
+
 
 def test_all_emails_are_synthetic():
     blob = json.dumps(EXAMPLES)
@@ -85,8 +87,9 @@ def test_no_realistic_secrets():
     for token in re.findall(r"[A-Za-z0-9+/]{20,}", blob):
         if token.isalpha():
             continue  # a long word, not a secret
-        assert "placeholder" in token or "synthetic" in token, \
+        assert "placeholder" in token or "synthetic" in token, (
             f"possible real secret in generated data: {token!r}"
+        )
 
 
 def test_no_real_domains():
@@ -96,6 +99,7 @@ def test_no_real_domains():
 
 
 # --- Diversity / "not too obvious" (bug item) -----------------------------
+
 
 def test_uses_multiple_injection_patterns():
     patterns = {s.pattern_id for s in SEEDS if s.pattern_id}
@@ -115,8 +119,9 @@ def test_multiple_attack_categories_present():
 
 
 def test_injection_contexts_are_not_all_identical():
-    contexts = [e["external_context"] for e in EXAMPLES
-                if e["attack_category"] == "prompt_injection"]
+    contexts = [
+        e["external_context"] for e in EXAMPLES if e["attack_category"] == "prompt_injection"
+    ]
     assert len(set(contexts)) == len(contexts), "duplicate injection external_context values"
 
 
@@ -127,12 +132,16 @@ def test_no_duplicate_user_requests():
 
 # --- On-disk file stays in sync with the seeds ----------------------------
 
+
 def test_written_file_matches_generation():
     on_disk = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
-    assert on_disk == EXAMPLES, "data/red_team_examples.json is out of date; re-run generate_red_team.py"
+    assert on_disk == EXAMPLES, (
+        "data/red_team_examples.json is out of date; re-run generate_red_team.py"
+    )
 
 
 # --- Agent error paths ----------------------------------------------------
+
 
 def test_unknown_mode_raises():
     with pytest.raises(ValueError):
@@ -140,29 +149,38 @@ def test_unknown_mode_raises():
 
 
 def test_pattern_without_directive_raises():
-    bad = ScenarioSeed("read_file", {}, "prompt_injection", "high", "BLOCK", "u", "x",
-                       pattern_id="direct_override")
+    bad = ScenarioSeed(
+        "read_file", {}, "prompt_injection", "high", "BLOCK", "u", "x", pattern_id="direct_override"
+    )
     with pytest.raises(ValueError):
         RedTeamAgent().generate_example(bad)
 
 
-def test_online_mode_not_implemented():
-    with pytest.raises(NotImplementedError):
+def test_online_mode_requires_configured_runtime():
+    with pytest.raises(LLMConfigurationError):
         RedTeamAgent(mode="online").generate_example(email_seeds()[0])
 
 
 # --- Fallback runner (no pytest) ------------------------------------------
 
+
 def _main():
     import types
-    tests = [v for k, v in sorted(globals().items())
-             if k.startswith("test_") and isinstance(v, types.FunctionType)]
+
+    tests = [
+        v
+        for k, v in sorted(globals().items())
+        if k.startswith("test_") and isinstance(v, types.FunctionType)
+    ]
     passed = failed = 0
     for t in tests:
         try:
-            t(); passed += 1; print(f"PASS  {t.__name__}")
-        except Exception as exc:  # noqa: BLE001 - simple runner
-            failed += 1; print(f"FAIL  {t.__name__}: {exc}")
+            t()
+            passed += 1
+            print(f"PASS  {t.__name__}")
+        except Exception as exc:
+            failed += 1
+            print(f"FAIL  {t.__name__}: {exc}")
     print(f"\n{passed}/{passed + failed} tests passed.")
     return 1 if failed else 0
 

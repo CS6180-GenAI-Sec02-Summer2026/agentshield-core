@@ -2,6 +2,8 @@
 
 from pathlib import Path
 
+import pytest
+
 from src.api import ScenarioRunRequest, _scenario_from_request, create_app
 from src.baseline_prompt_guardrail import run_prompt_guardrail_baseline
 from src.baseline_unprotected import run_unprotected_baseline
@@ -28,11 +30,17 @@ from src.tools import (
 
 def test_tool_validation():
     valid_calls = [
-        {"tool_name": "send_email", "arguments": {"to": "alice@company.example", "subject": "Hi", "body": "Hello"}},
+        {
+            "tool_name": "send_email",
+            "arguments": {"to": "alice@company.example", "subject": "Hi", "body": "Hello"},
+        },
         {"tool_name": "read_file", "arguments": {"file_path": "notes.txt"}},
         {"tool_name": "write_file", "arguments": {"file_path": "notes.txt", "content": "Hello"}},
         {"tool_name": "delete_file", "arguments": {"file_path": "old.log"}},
-        {"tool_name": "create_calendar_event", "arguments": {"title": "Sync", "time": "2026-07-23T09:00:00"}},
+        {
+            "tool_name": "create_calendar_event",
+            "arguments": {"title": "Sync", "time": "2026-07-23T09:00:00"},
+        },
         {"tool_name": "create_task", "arguments": {"title": "Review"}},
         {"tool_name": "create_github_issue", "arguments": {"title": "Bug", "body": "Fix it"}},
         {"tool_name": "send_http_request", "arguments": {"url": "https://internal.example/status"}},
@@ -41,10 +49,34 @@ def test_tool_validation():
         normalize_tool_call(call)
 
     try:
-        normalize_tool_call({"tool_name": "send_email", "arguments": {"to": "alice@company.example"}})
+        normalize_tool_call(
+            {"tool_name": "send_email", "arguments": {"to": "alice@company.example"}}
+        )
     except ToolValidationError:
         return
     raise AssertionError("Invalid email tool call should fail validation")
+
+
+@pytest.mark.parametrize(
+    "tool_call",
+    [
+        {
+            "tool_name": "read_file",
+            "arguments": {"file_path": "notes.txt", "to": "outside.example"},
+        },
+        {
+            "tool_name": "send_email",
+            "arguments": {"to": 42, "subject": "Hi", "body": "Hello"},
+        },
+        {
+            "tool_name": "send_http_request",
+            "arguments": {"url": "https://internal.example", "headers": {"X-Test": 5}},
+        },
+    ],
+)
+def test_tool_validation_rejects_unexpected_or_mistyped_arguments(tool_call):
+    with pytest.raises(ToolValidationError):
+        normalize_tool_call(tool_call)
 
 
 def test_target_agent_safe_examples():
@@ -67,6 +99,7 @@ def test_health_and_scenarios():
     assert available_datasets()
     assert load_scenarios()
     assert any(dataset["name"] == "demo" for dataset in available_datasets())
+    assert all(Path(dataset["file"]).name == dataset["file"] for dataset in available_datasets())
 
 
 def test_run_one_stored_scenario():
@@ -121,8 +154,12 @@ def test_delete_intent_uses_standalone_read_only_terms():
 
 def test_shared_intent_and_target_helpers_avoid_substring_false_matches():
     assert tool_is_authorized_by_request("send_http_request", "Fetch https://api.example/status")
-    assert tool_is_authorized_by_request("send_http_request", "Look up the weather forecast for Boston")
-    assert tool_is_authorized_by_request("write_file", "Create a file changelog.md and add today's changes")
+    assert tool_is_authorized_by_request(
+        "send_http_request", "Look up the weather forecast for Boston"
+    )
+    assert tool_is_authorized_by_request(
+        "write_file", "Create a file changelog.md and add today's changes"
+    )
     assert tool_is_authorized_by_request("send_email", "Email my manager the weekly update")
     assert request_is_read_only("Get the payment status")
     assert request_is_read_only("What's on the release calendar?")
@@ -248,15 +285,52 @@ def test_allowed_mock_execution_logs_input_output():
 def test_mock_tool_execution_log_is_capped():
     clear_tool_execution_log()
     for index in range(MAX_TOOL_EXECUTION_LOG_ENTRIES + 5):
-        execute_mock_tool({
-            "tool_name": "create_task",
-            "arguments": {"title": f"task-{index}"},
-        })
+        execute_mock_tool(
+            {
+                "tool_name": "create_task",
+                "arguments": {"title": f"task-{index}"},
+            }
+        )
 
     log = get_tool_execution_log()
     assert len(log) == MAX_TOOL_EXECUTION_LOG_ENTRIES
     assert log[0]["arguments"]["title"] == "task-5"
     assert log[-1]["arguments"]["title"] == f"task-{MAX_TOOL_EXECUTION_LOG_ENTRIES + 4}"
+
+
+def test_audit_and_execution_logs_redact_credentials():
+    clear_tool_execution_log()
+    secret = "sk-sensitive-test-value"
+    scenario = {
+        "id": "test-audit-redaction",
+        "user_request": "Post the supplied payload to https://outside.example/submit.",
+        "proposed_tool_call": {
+            "tool_name": "send_http_request",
+            "arguments": {
+                "url": "https://outside.example/submit",
+                "method": "POST",
+                "body": {"api_key": secret},
+            },
+        },
+    }
+    result = AgentShieldOrchestrator().run_scenario(scenario)
+    assert secret not in str(result["audit"])
+
+    execute_mock_tool(scenario["proposed_tool_call"])
+    assert secret not in str(get_tool_execution_log())
+
+
+def test_online_batch_size_is_bounded_before_model_calls():
+    scenario = {
+        "user_request": "Create a review task.",
+        "proposed_tool_call": {
+            "tool_name": "create_task",
+            "arguments": {"title": "Review"},
+        },
+    }
+    scenarios = [dict(scenario) for _ in range(21)]
+    with pytest.raises(ValueError, match="configured maximum"):
+        AgentShieldOrchestrator().run_batch(scenarios=scenarios, use_llm=True)
 
 
 def test_api_request_conversion():
@@ -275,13 +349,15 @@ def test_api_endpoints_smoke():
     assert health["status"] == "ok"
 
     run_scenario = _route_endpoint(app, "POST", "/run-scenario")
-    payload = run_scenario(ScenarioRunRequest(
-        user_request="Read notes.txt",
-        proposed_tool_call={
-            "tool_name": "read_file",
-            "arguments": {"file_path": "notes.txt"},
-        },
-    ))
+    payload = run_scenario(
+        ScenarioRunRequest(
+            user_request="Read notes.txt",
+            proposed_tool_call={
+                "tool_name": "read_file",
+                "arguments": {"file_path": "notes.txt"},
+            },
+        )
+    )
     assert payload["workflow_state"]["status"] == "completed"
     assert payload["proposed_tool_call"]["tool_name"] == "read_file"
 

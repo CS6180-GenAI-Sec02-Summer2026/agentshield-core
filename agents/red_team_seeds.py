@@ -521,10 +521,4 @@ def tool_coverage_seeds() -> list[ScenarioSeed]:
 
 def all_seeds() -> list[ScenarioSeed]:
     """All red-team seeds across every tool."""
-    return (
-        email_seeds()
-        + file_seeds()
-        + http_seeds()
-        + mixed_seeds()
-        + tool_coverage_seeds()
-    )
+    return email_seeds() + file_seeds() + http_seeds() + mixed_seeds() + tool_coverage_seeds()

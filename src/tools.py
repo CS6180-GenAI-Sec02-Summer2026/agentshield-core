@@ -6,11 +6,13 @@ actions. The orchestrator can use them for demos and API responses while keeping
 the firewall as the execution gate.
 """
 
-from dataclasses import dataclass, asdict
-from datetime import datetime, timezone
 import hashlib
 import json
+from dataclasses import asdict, dataclass
+from datetime import datetime, timezone
 from typing import Any
+
+from src.llm_safety import redact_for_model
 
 
 class ToolValidationError(ValueError):
@@ -21,11 +23,23 @@ class ToolValidationError(ValueError):
 class ToolSpec:
     name: str
     required_any: tuple[tuple[str, ...], ...]
-    optional: tuple[str, ...] = ()
+    argument_types: dict[str, tuple[type, ...]]
     description: str = ""
 
     def to_dict(self) -> dict:
-        return asdict(self)
+        required_arguments = {argument for aliases in self.required_any for argument in aliases}
+        return {
+            "name": self.name,
+            "required_any": self.required_any,
+            "optional": tuple(
+                argument for argument in self.argument_types if argument not in required_arguments
+            ),
+            "argument_types": {
+                argument: tuple(value_type.__name__ for value_type in value_types)
+                for argument, value_types in self.argument_types.items()
+            },
+            "description": self.description,
+        }
 
 
 @dataclass
@@ -45,51 +59,122 @@ TOOL_SPECS: dict[str, ToolSpec] = {
     "send_email": ToolSpec(
         name="send_email",
         required_any=(("to", "recipients"), ("subject",), ("body", "content")),
-        optional=("cc", "bcc", "attachments", "targets"),
+        argument_types={
+            "to": (str, list),
+            "recipients": (list,),
+            "subject": (str,),
+            "body": (str,),
+            "content": (str,),
+            "cc": (list,),
+            "bcc": (list,),
+            "attachments": (list,),
+            "targets": (list,),
+        },
         description="Prepare an email for delivery.",
     ),
     "read_file": ToolSpec(
         name="read_file",
         required_any=(("file_path", "path"),),
+        argument_types={"file_path": (str,), "path": (str,)},
         description="Read a local file.",
     ),
     "write_file": ToolSpec(
         name="write_file",
         required_any=(("file_path", "path"), ("content", "body")),
-        optional=("mode",),
+        argument_types={
+            "file_path": (str,),
+            "path": (str,),
+            "content": (str,),
+            "body": (str,),
+            "mode": (str,),
+        },
         description="Write content to a local file.",
     ),
     "delete_file": ToolSpec(
         name="delete_file",
         required_any=(("file_path", "path", "targets"),),
-        optional=("recursive",),
+        argument_types={
+            "file_path": (str,),
+            "path": (str,),
+            "targets": (list,),
+            "recursive": (bool,),
+        },
         description="Delete one or more local files.",
     ),
     "create_calendar_event": ToolSpec(
         name="create_calendar_event",
         required_any=(("title", "summary"), ("time", "start_time", "start")),
-        optional=("participants", "attendees", "visibility", "end_time", "location"),
+        argument_types={
+            "title": (str,),
+            "summary": (str,),
+            "time": (str,),
+            "start_time": (str,),
+            "start": (str,),
+            "participants": (list,),
+            "attendees": (list,),
+            "visibility": (str,),
+            "end_time": (str,),
+            "end": (str,),
+            "location": (str,),
+            "description": (str,),
+        },
         description="Create a calendar event.",
     ),
     "create_task": ToolSpec(
         name="create_task",
         required_any=(("title",),),
-        optional=("body", "description", "assignee", "due_date", "participants", "visibility"),
+        argument_types={
+            "title": (str,),
+            "body": (str,),
+            "description": (str,),
+            "assignee": (str,),
+            "due_date": (str,),
+            "due": (str,),
+            "participants": (list,),
+            "visibility": (str,),
+        },
         description="Create a task item.",
     ),
     "create_github_issue": ToolSpec(
         name="create_github_issue",
         required_any=(("title",), ("body", "description")),
-        optional=("repo", "repository", "repo_visibility", "labels"),
+        argument_types={
+            "title": (str,),
+            "body": (str,),
+            "description": (str,),
+            "repo": (str,),
+            "repository": (str,),
+            "repo_visibility": (str,),
+            "labels": (list,),
+        },
         description="Create a GitHub issue.",
     ),
     "send_http_request": ToolSpec(
         name="send_http_request",
         required_any=(("url",),),
-        optional=("method", "headers", "body", "params"),
+        argument_types={
+            "url": (str,),
+            "method": (str,),
+            "headers": (dict,),
+            "body": (str, dict, list),
+            "params": (dict,),
+        },
         description="Prepare an HTTP request.",
     ),
 }
+
+STRING_LIST_ARGUMENTS = {
+    "to",
+    "recipients",
+    "cc",
+    "bcc",
+    "attachments",
+    "targets",
+    "participants",
+    "attendees",
+    "labels",
+}
+STRING_MAP_ARGUMENTS = {"headers", "params"}
 
 TOOL_EXECUTION_LOG: list[dict[str, Any]] = []
 MAX_TOOL_EXECUTION_LOG_ENTRIES = 1000
@@ -121,6 +206,40 @@ def validate_tool_call(tool_name: str | None, arguments: dict[str, Any]) -> None
         raise ToolValidationError(f"Unsupported tool '{tool_name}'. Supported tools: {supported}.")
 
     spec = TOOL_SPECS[tool_name]
+    unexpected = sorted(set(arguments) - set(spec.argument_types))
+    if unexpected:
+        raise ToolValidationError(
+            f"Unexpected argument(s) for {tool_name}: {', '.join(unexpected)}."
+        )
+
+    expected_types = spec.argument_types
+    for argument_name, value in arguments.items():
+        if value is None:
+            continue
+        if not isinstance(value, expected_types[argument_name]):
+            expected = "/".join(value_type.__name__ for value_type in expected_types[argument_name])
+            raise ToolValidationError(
+                f"Argument '{argument_name}' for {tool_name} must be {expected}."
+            )
+        if (
+            argument_name in STRING_LIST_ARGUMENTS
+            and isinstance(value, list)
+            and (not value or any(not isinstance(item, str) or not item.strip() for item in value))
+        ):
+            raise ToolValidationError(
+                f"Argument '{argument_name}' for {tool_name} must contain non-empty strings."
+            )
+        if (
+            argument_name in STRING_MAP_ARGUMENTS
+            and isinstance(value, dict)
+            and any(
+                not isinstance(key, str) or not isinstance(item, str) for key, item in value.items()
+            )
+        ):
+            raise ToolValidationError(
+                f"Argument '{argument_name}' for {tool_name} must map strings to strings."
+            )
+
     missing_groups = []
     for aliases in spec.required_any:
         if not any(_has_value(arguments.get(alias)) for alias in aliases):
@@ -205,14 +324,16 @@ def _has_value(value: Any) -> bool:
 
 
 def _append_tool_log(result: MockToolResult) -> None:
-    TOOL_EXECUTION_LOG.append({
-        "timestamp": datetime.now(timezone.utc).isoformat(),
-        "tool_name": result.tool_name,
-        "executed": result.executed,
-        "status": result.status,
-        "arguments": result.arguments,
-        "output": result.output,
-    })
+    TOOL_EXECUTION_LOG.append(
+        {
+            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "tool_name": result.tool_name,
+            "executed": result.executed,
+            "status": result.status,
+            "arguments": redact_for_model(result.arguments),
+            "output": result.output,
+        }
+    )
     if len(TOOL_EXECUTION_LOG) > MAX_TOOL_EXECUTION_LOG_ENTRIES:
         del TOOL_EXECUTION_LOG[:-MAX_TOOL_EXECUTION_LOG_ENTRIES]
 

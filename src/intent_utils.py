@@ -78,9 +78,8 @@ READ_ONLY_REQUEST_KEYWORDS = (
     "summarize",
     "view",
 )
-READ_ONLY_REQUEST_PATTERNS = tuple(
-    _keyword_pattern(keyword) for keyword in READ_ONLY_REQUEST_KEYWORDS
-) + (
+READ_ONLY_REQUEST_PATTERNS = (
+    *(_keyword_pattern(keyword) for keyword in READ_ONLY_REQUEST_KEYWORDS),
     re.compile(r"\bwhat(?:'s|s| is)\b"),
 )
 EXPLICIT_DELETE_PATTERNS = (
@@ -128,8 +127,8 @@ def tool_is_authorized_by_request(tool_name: str, request_text: str) -> bool:
     if tool_name == "send_email":
         request_lower = request_text.lower()
         if _matches(READ_ONLY_EMAIL_PATTERNS, request_lower):
-            return _matches(EXPLICIT_EMAIL_ACTION_PATTERNS, request_lower) and not request_lower.startswith(
-                ("read ", "summarize ", "check ", "show ", "open ")
-            )
+            return _matches(
+                EXPLICIT_EMAIL_ACTION_PATTERNS, request_lower
+            ) and not request_lower.startswith(("read ", "summarize ", "check ", "show ", "open "))
     patterns = TOOL_INTENT_PATTERNS.get(tool_name, ())
     return _matches(patterns, request_text.lower())
